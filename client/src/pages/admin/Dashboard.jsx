@@ -13,6 +13,7 @@ function AdminDashboard() {
     pendingReviews: 0,
     approved: 0
   })
+  const [statsArray, setStatsArray] = useState([])
   const [recentReports, setRecentReports] = useState([])
   const [departments, setDepartments] = useState([])
   const [topPerformers, setTopPerformers] = useState([])
@@ -51,6 +52,15 @@ function AdminDashboard() {
         pendingReviews: pendingReports.length,
         approved: approvedReports.length
       })
+      
+      // Format stats for display
+      const statsArray = [
+        { label: 'Total Employees', value: employees.length, icon: '👥' },
+        { label: 'Reports This Week', value: reportsThisWeek.length, icon: '📊' },
+        { label: 'Pending Reviews', value: pendingReports.length, icon: '⏳' },
+        { label: 'Approved Reports', value: approvedReports.length, icon: '✅' }
+      ]
+      setStatsArray(statsArray)
       
       // Format recent reports (last 4)
       const reportsWithDates = allReports.map(report => ({
@@ -188,7 +198,7 @@ function AdminDashboard() {
 
         {/* Stats Cards */}
         <div className="card-grid card-grid-4 animate-slide-up" style={{ marginBottom: '32px' }}>
-          {stats.map((stat, index) => (
+          {statsArray.map((stat, index) => (
             <div 
               key={index} 
               className="card-metal"

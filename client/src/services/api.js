@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Request deduplication cache
+const requestCache = new Map();
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -32,6 +35,22 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Deduplicate GET requests (prevent duplicate requests in Strict Mode)
+const dedupedGet = (url, config = {}) => {
+  const cacheKey = `GET:${url}`;
+  
+  if (requestCache.has(cacheKey)) {
+    return requestCache.get(cacheKey);
+  }
+  
+  const request = api.get(url, config).finally(() => {
+    requestCache.delete(cacheKey);
+  });
+  
+  requestCache.set(cacheKey, request);
+  return request;
+};
 
 export const authAPI = {
   login: (email, password) => 
@@ -69,13 +88,13 @@ export const userAPI = {
 
 export const reportAPI = {
   getAllReports: (params) => 
-    api.get('/reports', { params }),
+    dedupedGet('/reports', { params }),
   
   getReport: (id) => 
     api.get(`/reports/${id}`),
   
   getByDate: (date) => 
-    api.get(`/reports?date=${date}`),
+    dedupedGet(`/reports?date=${date}`),
   
   create: (data) => 
     api.post('/reports', data),
@@ -99,15 +118,15 @@ export const reportAPI = {
     api.put(`/reports/${id}/review`, data),
   
   getStats: (userId) => 
-    api.get('/reports/stats', { params: { userId } }),
+    dedupedGet('/reports/stats', { params: { userId } }),
 };
 
 export const announcementAPI = {
   getAll: (params) => 
-    api.get('/announcements', { params }),
+    dedupedGet('/announcements', { params }),
   
   getAnnouncements: (params) => 
-    api.get('/announcements', { params }),
+    dedupedGet('/announcements', { params }),
   
   getAnnouncement: (id) => 
     api.get(`/announcements/${id}`),
