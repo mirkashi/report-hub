@@ -74,9 +74,10 @@ export const getReports = async (req, res, next) => {
 
     // Handle exact date match
     if (date) {
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
       query.date = {
         $gte: startOfDay,
         $lte: endOfDay,

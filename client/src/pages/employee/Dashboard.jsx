@@ -87,7 +87,9 @@ function EmployeeDashboard() {
   const getWeekDays = () => {
     const today = new Date()
     const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1) // Get Monday of current week
+    // Handle Sunday (0) by treating it as 7
+    const dayOfWeek = today.getDay() || 7
+    monday.setDate(today.getDate() - dayOfWeek + 1) // Get Monday of current week
     
     const days = []
     for (let i = 0; i < 7; i++) {

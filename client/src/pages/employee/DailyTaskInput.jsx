@@ -346,8 +346,8 @@ function DailyTaskInput() {
 
             <div className="divider"></div>
 
-            {/* Recent Tasks Quick Add */}
-            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Recent Tasks</h3>
+            {/* Today's Tasks Quick Add */}
+            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Today's Tasks</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {tasks.length > 0 ? (
                 tasks.slice(0, 5).map((task) => (
@@ -368,7 +368,7 @@ function DailyTaskInput() {
                 ))
               ) : (
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#8a7a6a', fontStyle: 'italic' }}>
-                  Your recent tasks will appear here for quick re-adding
+                  Your tasks for today will appear here for quick re-adding
                 </p>
               )}
             </div>
