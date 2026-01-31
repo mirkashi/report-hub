@@ -289,7 +289,8 @@ export const getReportStats = async (req, res, next) => {
 
     const query = userId ? { user: userId } : {};
 
-    const stats = await Report.aggregate([
+    // Get report status stats
+    const statusStats = await Report.aggregate([
       { $match: query },
       {
         $group: {
@@ -299,12 +300,44 @@ export const getReportStats = async (req, res, next) => {
       },
     ]);
 
+    // Get task stats
+    const taskStats = await Report.aggregate([
+      { $match: query },
+      { $unwind: '$tasks' },
+      {
+        $group: {
+          _id: '$tasks.status',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Get recent reports (for weekly overview)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const weeklyReports = await Report.find({
+      ...query,
+      date: { $gte: oneWeekAgo }
+    }).sort({ date: -1 });
+
     const totalReports = await Report.countDocuments(query);
+    
+    // Calculate task counts
+    const totalTasks = taskStats.reduce((sum, stat) => sum + stat.count, 0);
+    const completedTasks = taskStats.find(s => s._id === 'completed')?.count || 0;
+    const pendingTasks = taskStats.find(s => s._id === 'pending')?.count || 0;
 
     res.status(200).json({
       success: true,
       totalReports,
-      stats,
+      statusStats,
+      taskStats: {
+        total: totalTasks,
+        completed: completedTasks,
+        pending: pendingTasks
+      },
+      weeklyReports
     });
   } catch (error) {
     next(error);
