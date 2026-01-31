@@ -49,6 +49,7 @@ export const getReports = async (req, res, next) => {
       limit = 10,
       type,
       status,
+      date,
       startDate,
       endDate,
       userId,
@@ -71,7 +72,16 @@ export const getReports = async (req, res, next) => {
       query.status = status;
     }
 
-    if (startDate || endDate) {
+    // Handle exact date match
+    if (date) {
+      const targetDate = new Date(date);
+      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+      query.date = {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      };
+    } else if (startDate || endDate) {
       query.date = {};
       if (startDate) {
         query.date.$gte = new Date(startDate);
