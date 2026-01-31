@@ -1,77 +1,71 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { announcementAPI } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminAnnouncements() {
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      title: 'New Report Submission Deadline',
-      content: 'Starting next month, all weekly reports must be submitted by Friday 5:00 PM. Late submissions will be flagged for review.',
-      priority: 'high',
-      author: 'Admin',
-      createdAt: 'Jan 31, 2026',
-      pinned: true
-    },
-    {
-      id: 2,
-      title: 'System Maintenance Scheduled',
-      content: 'The report hub will undergo scheduled maintenance on Saturday, Feb 8, 2026 from 2:00 AM to 6:00 AM. Please save your work before this time.',
-      priority: 'medium',
-      author: 'IT Department',
-      createdAt: 'Jan 30, 2026',
-      pinned: false
-    },
-    {
-      id: 3,
-      title: 'New Feature: File Attachments',
-      content: 'We\'ve added the ability to attach files directly to your daily tasks. Supported formats include PDF, DOC, and images up to 10MB.',
-      priority: 'low',
-      author: 'Product Team',
-      createdAt: 'Jan 28, 2026',
-      pinned: false
-    },
-    {
-      id: 4,
-      title: 'Q1 Performance Reviews',
-      content: 'Q1 performance reviews will begin on March 1st. Please ensure all your weekly reports are complete and accurate before this date.',
-      priority: 'high',
-      author: 'HR Department',
-      createdAt: 'Jan 25, 2026',
-      pinned: true
-    },
-  ])
-
+  const { user } = useAuth()
+  const [announcements, setAnnouncements] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: '',
     content: '',
     priority: 'medium'
   })
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [])
+
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true)
+      const data = await announcementAPI.getAll()
+      setAnnouncements(data || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching announcements:', err)
+      setError('Failed to load announcements')
+      setAnnouncements([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) return
 
-    setAnnouncements([
-      {
-        id: Date.now(),
+    try {
+      setSubmitting(true)
+      const createdAnnouncement = await announcementAPI.create({
         ...newAnnouncement,
-        author: 'Admin',
-        createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        pinned: false
-      },
-      ...announcements
-    ])
-    setNewAnnouncement({ title: '', content: '', priority: 'medium' })
+        author: user._id,
+        isPublished: true,
+        publishedAt: new Date(),
+        targetAudience: ['all']
+      })
+      setAnnouncements([createdAnnouncement, ...announcements])
+      setNewAnnouncement({ title: '', content: '', priority: 'medium' })
+      setError(null)
+    } catch (err) {
+      console.error('Error creating announcement:', err)
+      setError('Failed to create announcement')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const togglePin = (id) => {
-    setAnnouncements(announcements.map(a => 
-      a.id === id ? { ...a, pinned: !a.pinned } : a
-    ))
-  }
-
-  const deleteAnnouncement = (id) => {
-    setAnnouncements(announcements.filter(a => a.id !== id))
+  const deleteAnnouncement = async (id) => {
+    try {
+      await announcementAPI.delete(id)
+      setAnnouncements(announcements.filter(a => a._id !== id))
+    } catch (err) {
+      console.error('Error deleting announcement:', err)
+      setError('Failed to delete announcement')
+    }
   }
 
   const getPriorityColor = (priority) => {
@@ -85,7 +79,7 @@ function AdminAnnouncements() {
   const sortedAnnouncements = [...announcements].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1
     if (!a.pinned && b.pinned) return 1
-    return 0
+    return new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt)
   })
 
   return (
@@ -99,6 +93,24 @@ function AdminAnnouncements() {
           <p>Create and manage company announcements</p>
         </div>
 
+        {/* Loading/Error State */}
+        {loading && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#8a7a6a' }}>
+            <p>⏳ Loading announcements...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#e53e3e' }}>
+            <p>❌ {error}</p>
+            <button className="btn-skeu btn-primary" onClick={fetchAnnouncements} style={{ marginTop: '16px' }}>
+              <span>🔄</span>
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {!loading && (
         <div className="card-grid card-grid-2">
           {/* Announcement List - Memo Board Style */}
           <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -125,7 +137,7 @@ function AdminAnnouncements() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
                 {sortedAnnouncements.map((announcement, index) => (
                   <div 
-                    key={announcement.id}
+                    key={announcement._id}
                     className="card-paper"
                     style={{ 
                       position: 'relative',
@@ -196,26 +208,29 @@ function AdminAnnouncements() {
                         borderTop: '1px solid rgba(0,0,0,0.1)'
                       }}>
                         <span style={{ fontSize: '0.8rem', color: '#8a7a6a' }}>
-                          👤 {announcement.author} • 📅 {announcement.createdAt}
+                          👤 {announcement.author?.name || 'Admin'} • 📅 {new Date(announcement.publishedAt || announcement.createdAt).toLocaleDateString()}
                         </span>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button 
                             className="btn-skeu btn-secondary"
                             style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={() => togglePin(announcement.id)}
+                            disabled
+                            title="Pin feature coming soon"
                           >
                             {announcement.pinned ? '📌' : '📍'}
                           </button>
                           <button 
                             className="btn-skeu btn-secondary"
                             style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            disabled
+                            title="Edit feature coming soon"
                           >
                             ✏️
                           </button>
                           <button 
                             className="btn-skeu btn-danger"
                             style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={() => deleteAnnouncement(announcement.id)}
+                            onClick={() => deleteAnnouncement(announcement._id)}
                           >
                             🗑️
                           </button>
@@ -328,13 +343,14 @@ function AdminAnnouncements() {
                   type="button" 
                   className="btn-skeu btn-secondary"
                   onClick={() => setNewAnnouncement({ title: '', content: '', priority: 'medium' })}
+                  disabled={submitting}
                 >
                   <span>↩️</span>
                   <span>Clear</span>
                 </button>
-                <button type="submit" className="btn-3d">
+                <button type="submit" className="btn-3d" disabled={submitting}>
                   <span>📢</span>
-                  <span>Publish Announcement</span>
+                  <span>{submitting ? 'Publishing...' : 'Publish Announcement'}</span>
                 </button>
               </div>
             </form>
@@ -366,6 +382,7 @@ function AdminAnnouncements() {
             </div>
           </div>
         </div>
+        )}
       </main>
     </div>
   )

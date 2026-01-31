@@ -1,47 +1,85 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
+import { reportAPI } from '../../services/api'
 
 function WeeklySubmission() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [summary, setSummary] = useState('')
   const [challenges, setChallenges] = useState('')
   const [nextWeekPlan, setNextWeekPlan] = useState('')
-
-  const weekSummary = {
+  const [weekSummary, setWeekSummary] = useState({
     startDate: 'January 27, 2026',
     endDate: 'February 2, 2026',
-    totalTasks: 17,
-    completedTasks: 14,
-    pendingTasks: 3,
-    hoursWorked: 42
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+    hoursWorked: 0
+  })
+  const [dailySummary, setDailySummary] = useState([])
+  const [attachedFiles, setAttachedFiles] = useState([])
+
+  useEffect(() => {
+    fetchWeeklyData()
+  }, [])
+
+  const fetchWeeklyData = async () => {
+    try {
+      setLoading(true)
+      const data = await reportAPI.getAllReports()
+      if (data && data.length > 0) {
+        const latestReport = data[0]
+        const completed = latestReport.tasks?.filter(t => t.status === 'completed').length || 0
+        const total = latestReport.tasks?.length || 0
+        const hours = latestReport.tasks?.reduce((sum, t) => sum + (t.duration || 0), 0) || 0
+        
+        setWeekSummary({
+          startDate: new Date(latestReport.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          endDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          totalTasks: total,
+          completedTasks: completed,
+          pendingTasks: total - completed,
+          hoursWorked: hours
+        })
+        setAttachedFiles(latestReport.attachments || [])
+      }
+      setLoading(false)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching weekly data:', err)
+      setLoading(false)
+      setError('Failed to load weekly data')
+    }
   }
 
-  const dailySummary = [
-    { day: 'Monday', tasks: 3, completed: 3, hours: 8 },
-    { day: 'Tuesday', tasks: 4, completed: 4, hours: 9 },
-    { day: 'Wednesday', tasks: 2, completed: 2, hours: 7 },
-    { day: 'Thursday', tasks: 5, completed: 5, hours: 10 },
-    { day: 'Friday', tasks: 3, completed: 0, hours: 8 },
-  ]
-
-  const attachedFiles = [
-    { name: 'api_documentation_v2.pdf', size: '2.4 MB', type: 'pdf' },
-    { name: 'test_results_screenshot.png', size: '856 KB', type: 'image' },
-    { name: 'code_review_notes.docx', size: '128 KB', type: 'doc' },
-  ]
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsSubmitting(true)
-    
-    // Simulate submission
-    setTimeout(() => {
+    if (!summary.trim()) {
+      setError('Please provide a weekly summary')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const today = new Date()
+      await reportAPI.create({
+        type: 'weekly',
+        date: today.toISOString(),
+        notes: summary,
+        status: 'submitted',
+        submittedAt: new Date()
+      })
       setIsSubmitting(false)
       setShowSuccess(true)
-    }, 2000)
+    } catch (err) {
+      console.error('Error submitting report:', err)
+      setIsSubmitting(false)
+      setError('Failed to submit report')
+    }
   }
 
   if (showSuccess) {
@@ -116,6 +154,26 @@ function WeeklySubmission() {
           <h1>📤 Weekly Report Submission</h1>
           <p>Review and submit your weekly work report</p>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#8a7a6a' }}>
+            <p>⏳ Loading weekly data...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#e53e3e' }}>
+            <p>❌ {error}</p>
+            <button className="btn-skeu btn-primary" onClick={fetchWeeklyData} style={{ marginTop: '16px' }}>
+              <span>🔄</span>
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {!loading && (
+        <>
 
         {/* Week Summary Card */}
         <div className="panel-raised animate-slide-up" style={{ marginBottom: '32px' }}>
@@ -356,6 +414,8 @@ function WeeklySubmission() {
             </div>
           </div>
         </form>
+        </>
+        )}
       </main>
     </div>
   )

@@ -1,40 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { reportAPI } from '../../services/api'
 
 function DailyTaskInput() {
   const [selectedDay, setSelectedDay] = useState(4) // Friday
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: 'Review pull requests',
-      description: 'Review and approve pending PRs for the frontend team.',
-      completed: false,
-      priority: 'medium',
-      attachments: ['code_review_notes.pdf']
-    },
-    {
-      id: 2,
-      title: 'Fix login bug',
-      description: 'Investigate and fix the session timeout issue reported by QA.',
-      completed: false,
-      priority: 'high',
-      attachments: []
-    },
-    {
-      id: 3,
-      title: 'Update unit tests',
-      description: 'Add test coverage for the new authentication module.',
-      completed: true,
-      priority: 'medium',
-      attachments: ['test_results.png']
-    },
-  ])
-
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    priority: 'medium'
+    priority: 'medium',
+    duration: 1
   })
+
+  useEffect(() => {
+    fetchTodaysTasks()
+  }, [selectedDay])
+
+  const fetchTodaysTasks = async () => {
+    try {
+      setLoading(true)
+      const today = new Date()
+      const data = await reportAPI.getByDate(today.toISOString().split('T')[0])
+      if (data && data.tasks) {
+        setTasks(data.tasks.map((task, idx) => ({
+          id: task._id || idx,
+          title: task.description,
+          description: `Priority: ${task.priority}`,
+          completed: task.status === 'completed',
+          priority: task.priority,
+          duration: task.duration || 1,
+          attachments: task.attachments || []
+        })))
+      } else {
+        setTasks([])
+      }
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching tasks:', err)
+      setTasks([])
+      setError(null) // Don't show error for missing report
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const weekDays = [
     { day: 'Mon', date: '27', month: 'Jan' },
@@ -52,21 +62,44 @@ function DailyTaskInput() {
     ))
   }
 
-  const addTask = (e) => {
+  const addTask = async (e) => {
     e.preventDefault()
     if (!newTask.title.trim()) return
     
-    setTasks([...tasks, {
-      id: Date.now(),
-      ...newTask,
-      completed: false,
-      attachments: []
-    }])
-    setNewTask({ title: '', description: '', priority: 'medium' })
+    try {
+      const today = new Date()
+      const taskData = {
+        type: 'daily',
+        date: today.toISOString(),
+        tasks: [{
+          description: newTask.title,
+          priority: newTask.priority,
+          duration: newTask.duration || 1,
+          status: 'pending'
+        }]
+      }
+      await reportAPI.create(taskData)
+      setTasks([...tasks, {
+        id: Date.now(),
+        ...newTask,
+        completed: false,
+        attachments: []
+      }])
+      setNewTask({ title: '', description: '', priority: 'medium', duration: 1 })
+    } catch (err) {
+      console.error('Error adding task:', err)
+      setError('Failed to add task')
+    }
   }
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id))
+  const deleteTask = async (id) => {
+    try {
+      await reportAPI.deleteTask(id)
+      setTasks(tasks.filter(task => task.id !== id))
+    } catch (err) {
+      console.error('Error deleting task:', err)
+      setError('Failed to delete task')
+    }
   }
 
   const completedCount = tasks.filter(t => t.completed).length
@@ -83,6 +116,15 @@ function DailyTaskInput() {
           <p>Log your daily work activities and tasks</p>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#8a7a6a' }}>
+            <p>⏳ Loading tasks...</p>
+          </div>
+        )}
+
+        {!loading && (
+        <>
         {/* Week Day Selector */}
         <div className="panel-raised animate-slide-up" style={{ marginBottom: '32px' }}>
           <h3 style={{ margin: '0 0 16px 0', fontFamily: 'var(--font-display)' }}>
@@ -303,6 +345,8 @@ function DailyTaskInput() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </main>
     </div>
   )

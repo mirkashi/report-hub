@@ -65,11 +65,17 @@ export const userAPI = {
 };
 
 export const reportAPI = {
-  getReports: (params) => 
+  getAllReports: (params) => 
     api.get('/reports', { params }),
   
   getReport: (id) => 
     api.get(`/reports/${id}`),
+  
+  getByDate: (date) => 
+    api.get(`/reports?date=${date}`),
+  
+  create: (data) => 
+    api.post('/reports', data),
   
   createReport: (data) => 
     api.post('/reports', data),
@@ -78,6 +84,9 @@ export const reportAPI = {
     api.put(`/reports/${id}`, data),
   
   deleteReport: (id) => 
+    api.delete(`/reports/${id}`),
+  
+  deleteTask: (id) => 
     api.delete(`/reports/${id}`),
   
   submitReport: (id) => 
@@ -91,17 +100,29 @@ export const reportAPI = {
 };
 
 export const announcementAPI = {
+  getAll: (params) => 
+    api.get('/announcements', { params }),
+  
   getAnnouncements: (params) => 
     api.get('/announcements', { params }),
   
   getAnnouncement: (id) => 
     api.get(`/announcements/${id}`),
   
+  create: (data) => 
+    api.post('/announcements', data),
+  
   createAnnouncement: (data) => 
     api.post('/announcements', data),
   
+  update: (id, data) => 
+    api.put(`/announcements/${id}`, data),
+  
   updateAnnouncement: (id, data) => 
     api.put(`/announcements/${id}`, data),
+  
+  delete: (id) => 
+    api.delete(`/announcements/${id}`),
   
   deleteAnnouncement: (id) => 
     api.delete(`/announcements/${id}`),

@@ -1,88 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { reportAPI } from '../../services/api'
 
 function AdminReports() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [selectedReport, setSelectedReport] = useState(null)
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const reports = [
-    {
-      id: 1,
-      employee: 'John Smith',
-      avatar: '👨‍💻',
-      email: 'john.smith@company.com',
-      department: 'Engineering',
-      week: 'Jan 27 - Feb 2, 2026',
-      status: 'pending',
-      tasksCompleted: 14,
-      totalTasks: 17,
-      hoursWorked: 42,
-      submittedAt: 'Jan 31, 2026 • 4:32 PM',
-      summary: 'Completed API documentation updates and reviewed multiple pull requests. Made progress on the authentication module refactoring.',
-      attachments: ['api_docs_v2.pdf', 'test_results.png']
-    },
-    {
-      id: 2,
-      employee: 'Sarah Johnson',
-      avatar: '👩‍🎨',
-      email: 'sarah.j@company.com',
-      department: 'Design',
-      week: 'Jan 27 - Feb 2, 2026',
-      status: 'approved',
-      tasksCompleted: 8,
-      totalTasks: 8,
-      hoursWorked: 40,
-      submittedAt: 'Jan 30, 2026 • 2:15 PM',
-      summary: 'Finalized all UI mockups for the new dashboard. Created design system documentation and component library updates.',
-      attachments: ['design_mockups.fig', 'style_guide.pdf']
-    },
-    {
-      id: 3,
-      employee: 'Mike Davis',
-      avatar: '👨‍💼',
-      email: 'mike.d@company.com',
-      department: 'Marketing',
-      week: 'Jan 27 - Feb 2, 2026',
-      status: 'revision',
-      tasksCompleted: 5,
-      totalTasks: 10,
-      hoursWorked: 35,
-      submittedAt: 'Jan 31, 2026 • 11:45 AM',
-      summary: 'Worked on Q1 marketing campaign. Several tasks delayed due to pending approvals from external vendors.',
-      attachments: ['campaign_draft.docx']
-    },
-    {
-      id: 4,
-      employee: 'Emily Chen',
-      avatar: '👩‍💻',
-      email: 'emily.c@company.com',
-      department: 'Engineering',
-      week: 'Jan 27 - Feb 2, 2026',
-      status: 'approved',
-      tasksCompleted: 12,
-      totalTasks: 12,
-      hoursWorked: 45,
-      submittedAt: 'Jan 30, 2026 • 5:00 PM',
-      summary: 'Successfully deployed the new payment integration. All unit tests passing with 95% coverage.',
-      attachments: ['deployment_report.pdf', 'coverage_report.html']
-    },
-    {
-      id: 5,
-      employee: 'Alex Thompson',
-      avatar: '👨‍💼',
-      email: 'alex.t@company.com',
-      department: 'Sales',
-      week: 'Jan 27 - Feb 2, 2026',
-      status: 'pending',
-      tasksCompleted: 7,
-      totalTasks: 8,
-      hoursWorked: 38,
-      submittedAt: 'Jan 31, 2026 • 3:20 PM',
-      summary: 'Closed 3 new deals this week. One pending proposal awaiting client feedback.',
-      attachments: ['sales_report.xlsx']
-    },
-  ]
+  useEffect(() => {
+    fetchReports()
+  }, [])
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true)
+      const data = await reportAPI.getAllReports()
+      const formattedReports = data.map(report => ({
+        id: report._id,
+        employee: report.user?.name || 'Unknown',
+        avatar: '📄',
+        email: report.user?.email || '',
+        department: report.user?.department || 'N/A',
+        week: new Date(report.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: report.status || 'draft',
+        tasksCompleted: report.tasks?.filter(t => t.status === 'completed').length || 0,
+        totalTasks: report.tasks?.length || 0,
+        hoursWorked: report.tasks?.reduce((sum, t) => sum + (t.duration || 0), 0) || 0,
+        submittedAt: report.submittedAt ? new Date(report.submittedAt).toLocaleDateString() : 'Not submitted',
+        summary: report.notes || report.tasks?.map(t => t.description).join('; ') || '',
+        attachments: report.attachments || []
+      }))
+      setReports(formattedReports)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching reports:', err)
+      setError('Failed to load reports')
+      setReports([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredReports = reports.filter(report => {
     if (selectedStatus !== 'all' && report.status !== selectedStatus) return false
@@ -158,6 +118,25 @@ function AdminReports() {
           </div>
         </div>
 
+        {/* Loading/Error State */}
+        {loading && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#8a7a6a' }}>
+            <p>⏳ Loading reports...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px', color: '#e53e3e' }}>
+            <p>❌ {error}</p>
+            <button className="btn-skeu btn-primary" onClick={fetchReports} style={{ marginTop: '16px' }}>
+              <span>🔄</span>
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
         {/* Reports Grid */}
         <div className="card-grid card-grid-2">
           {/* Report List */}
@@ -357,6 +336,8 @@ function AdminReports() {
             )}
           </div>
         </div>
+          </>
+        )}
       </main>
     </div>
   )

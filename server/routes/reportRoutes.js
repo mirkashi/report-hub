@@ -19,9 +19,9 @@ const router = express.Router();
 const createReportValidation = [
   body('type').isIn(['daily', 'weekly']).withMessage('Type must be daily or weekly'),
   body('date').isISO8601().withMessage('Valid date is required'),
-  body('tasks').isArray({ min: 1 }).withMessage('At least one task is required'),
-  body('tasks.*.description').trim().notEmpty().withMessage('Task description is required'),
-  body('tasks.*.duration').isNumeric().withMessage('Task duration must be a number'),
+  body('tasks').optional().isArray().withMessage('Tasks must be an array'),
+  body('tasks.*.description').optional().trim().notEmpty().withMessage('Task description is required'),
+  body('tasks.*.duration').optional().isNumeric().withMessage('Task duration must be a number'),
 ];
 
 const updateReportValidation = [
