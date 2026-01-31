@@ -1,73 +1,150 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
 import { useAuth } from '../../context/AuthContext'
+import { reportAPI, userAPI } from '../../services/api'
 
 function AdminDashboard() {
   const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    reportsThisWeek: 0,
+    pendingReviews: 0,
+    approved: 0
+  })
+  const [recentReports, setRecentReports] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [topPerformers, setTopPerformers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const stats = [
-    { icon: '👥', label: 'Total Employees', value: '48', change: '+3', changeType: 'positive' },
-    { icon: '📋', label: 'Reports This Week', value: '42', change: '+12', changeType: 'positive' },
-    { icon: '⏳', label: 'Pending Reviews', value: '6', change: '-2', changeType: 'negative' },
-    { icon: '✅', label: 'Approved', value: '36', change: '+14', changeType: 'positive' },
-  ]
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
-  const recentReports = [
-    {
-      id: 1,
-      employee: 'John Smith',
-      department: 'Engineering',
-      week: 'Jan 27 - Feb 2',
-      status: 'pending',
-      tasksCompleted: 14,
-      totalTasks: 17,
-      submittedAt: 'Jan 31, 2026 • 4:32 PM'
-    },
-    {
-      id: 2,
-      employee: 'Sarah Johnson',
-      department: 'Design',
-      week: 'Jan 27 - Feb 2',
-      status: 'approved',
-      tasksCompleted: 8,
-      totalTasks: 8,
-      submittedAt: 'Jan 30, 2026 • 2:15 PM'
-    },
-    {
-      id: 3,
-      employee: 'Mike Davis',
-      department: 'Marketing',
-      week: 'Jan 27 - Feb 2',
-      status: 'revision',
-      tasksCompleted: 5,
-      totalTasks: 10,
-      submittedAt: 'Jan 31, 2026 • 11:45 AM'
-    },
-    {
-      id: 4,
-      employee: 'Emily Chen',
-      department: 'Engineering',
-      week: 'Jan 27 - Feb 2',
-      status: 'approved',
-      tasksCompleted: 12,
-      totalTasks: 12,
-      submittedAt: 'Jan 30, 2026 • 5:00 PM'
-    },
-  ]
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch employees
+      const usersResponse = await userAPI.getUsers({ role: 'employee', limit: 100 })
+      const employees = usersResponse.data?.users || []
+      
+      // Fetch all reports
+      const reportsResponse = await reportAPI.getAllReports({ limit: 100 })
+      const allReports = reportsResponse.data?.reports || []
+      
+      // Calculate stats
+      const oneWeekAgo = new Date()
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+      
+      const reportsThisWeek = allReports.filter(r => 
+        new Date(r.date) >= oneWeekAgo
+      )
+      
+      const pendingReports = allReports.filter(r => r.status === 'submitted' || r.status === 'pending')
+      const approvedReports = allReports.filter(r => r.status === 'approved')
+      
+      setStats({
+        totalEmployees: employees.length,
+        reportsThisWeek: reportsThisWeek.length,
+        pendingReviews: pendingReports.length,
+        approved: approvedReports.length
+      })
+      
+      // Format recent reports (last 4)
+      const reportsWithDates = allReports.map(report => ({
+        ...report,
+        parsedSubmittedAt: new Date(report.submittedAt || report.date)
+      }))
+      
+      const formatted = reportsWithDates
+        .sort((a, b) => b.parsedSubmittedAt - a.parsedSubmittedAt)
+        .slice(0, 4)
+        .map(report => ({
+          id: report._id,
+          employee: report.user?.name || 'Unknown',
+          department: report.user?.department || 'N/A',
+          week: new Date(report.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: report.status === 'submitted' ? 'pending' : report.status,
+          tasksCompleted: report.tasks?.filter(t => t.status === 'completed').length || 0,
+          totalTasks: report.tasks?.length || 0,
+          submittedAt: report.submittedAt 
+            ? new Date(report.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + new Date(report.submittedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            : 'Not submitted'
+        }))
+      
+      setRecentReports(formatted)
+      
+      // Calculate department stats
+      const deptMap = new Map()
+      employees.forEach(emp => {
+        const dept = emp.department || 'N/A'
+        if (!deptMap.has(dept)) {
+          deptMap.set(dept, { name: dept, employees: 0, reportsSubmitted: 0 })
+        }
+        deptMap.get(dept).employees++
+      })
+      
+      allReports.forEach(report => {
+        const dept = report.user?.department || 'N/A'
+        if (deptMap.has(dept) && (report.status === 'submitted' || report.status === 'approved')) {
+          deptMap.get(dept).reportsSubmitted++
+        }
+      })
+      
+      const deptStats = Array.from(deptMap.values()).map(dept => ({
+        ...dept,
+        completion: dept.employees > 0 ? Math.round((dept.reportsSubmitted / dept.employees) * 100) : 0
+      }))
+      
+      setDepartments(deptStats)
+      
+      // Calculate top performers (employees with most completed tasks)
+      const employeeTaskMap = new Map()
+      allReports.forEach(report => {
+        const empId = report.user?._id
+        const empName = report.user?.name
+        const empDept = report.user?.department
+        if (empId && empName) {
+          if (!employeeTaskMap.has(empId)) {
+            employeeTaskMap.set(empId, {
+              name: empName,
+              department: empDept || 'N/A',
+              completed: 0,
+              total: 0
+            })
+          }
+          const empData = employeeTaskMap.get(empId)
+          empData.completed += report.tasks?.filter(t => t.status === 'completed').length || 0
+          empData.total += report.tasks?.length || 0
+        }
+      })
+      
+      const performers = Array.from(employeeTaskMap.values())
+        .map(emp => ({
+          ...emp,
+          score: emp.total > 0 ? Math.round((emp.completed / emp.total) * 100) : 0,
+          avatar: '👤'
+        }))
+        .filter(emp => emp.total > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+      
+      setTopPerformers(performers)
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const departments = [
-    { name: 'Engineering', employees: 18, reportsSubmitted: 16, completion: 89 },
-    { name: 'Design', employees: 8, reportsSubmitted: 8, completion: 100 },
-    { name: 'Marketing', employees: 10, reportsSubmitted: 8, completion: 80 },
-    { name: 'Sales', employees: 7, reportsSubmitted: 6, completion: 86 },
-    { name: 'HR', employees: 5, reportsSubmitted: 4, completion: 80 },
-  ]
-
-  const topPerformers = [
-    { name: 'Emily Chen', department: 'Engineering', score: 98, avatar: '👩‍💻' },
-    { name: 'Sarah Johnson', department: 'Design', score: 96, avatar: '👩‍🎨' },
-    { name: 'Alex Thompson', department: 'Sales', score: 94, avatar: '👨‍💼' },
+  const statsData = [
+    { icon: '👥', label: 'Total Employees', value: stats.totalEmployees.toString(), change: '', changeType: 'positive' },
+    { icon: '📋', label: 'Reports This Week', value: stats.reportsThisWeek.toString(), change: '', changeType: 'positive' },
+    { icon: '⏳', label: 'Pending Reviews', value: stats.pendingReviews.toString(), change: '', changeType: 'negative' },
+    { icon: '✅', label: 'Approved', value: stats.approved.toString(), change: '', changeType: 'positive' },
   ]
 
   return (
@@ -81,6 +158,12 @@ function AdminDashboard() {
           <p>Monitor and manage weekly report submissions</p>
         </div>
 
+        {loading ? (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px' }}>
+            <p>⏳ Loading dashboard data...</p>
+          </div>
+        ) : (
+        <>
         {/* Tabs */}
         <div className="tabs-skeu" style={{ marginBottom: '32px', display: 'inline-flex' }}>
           <button 
@@ -125,13 +208,15 @@ function AdminDashboard() {
                   <h3 style={{ color: 'rgba(255,255,255,0.7)' }}>{stat.label}</h3>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                     <span className="stat-value" style={{ color: '#fff' }}>{stat.value}</span>
-                    <span style={{ 
-                      fontSize: '0.85rem', 
-                      color: stat.changeType === 'positive' ? '#48bb78' : '#fc8181',
-                      fontWeight: 600
-                    }}>
-                      {stat.change}
-                    </span>
+                    {stat.change && (
+                      <span style={{ 
+                        fontSize: '0.85rem', 
+                        color: stat.changeType === 'positive' ? '#48bb78' : '#fc8181',
+                        fontWeight: 600
+                      }}>
+                        {stat.change}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -150,9 +235,9 @@ function AdminDashboard() {
               }}>
                 📋 Recent Submissions
               </h2>
-              <a href="/admin/reports" className="link-gold" style={{ fontSize: '0.9rem' }}>
+              <Link to="/admin/reports" className="link-gold" style={{ fontSize: '0.9rem' }}>
                 View All →
-              </a>
+              </Link>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -323,25 +408,27 @@ function AdminDashboard() {
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-              <a href="/admin/reports" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
+              <Link to="/admin/reports" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📋</div>
                 <div style={{ fontWeight: 600 }}>Review Reports</div>
-              </a>
-              <a href="/admin/announcements" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
+              </Link>
+              <Link to="/admin/announcements" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📢</div>
                 <div style={{ fontWeight: 600 }}>Announcements</div>
-              </a>
+              </Link>
               <div className="card-metal" style={{ textAlign: 'center', padding: '24px 16px', cursor: 'pointer' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📊</div>
                 <div style={{ fontWeight: 600 }}>Export Data</div>
               </div>
-              <div className="card-metal" style={{ textAlign: 'center', padding: '24px 16px', cursor: 'pointer' }}>
+              <Link to="/admin/employees" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>👥</div>
-                <div style={{ fontWeight: 600 }}>Manage Users</div>
-              </div>
+                <div style={{ fontWeight: 600 }}>Manage Employees</div>
+              </Link>
             </div>
           </div>
         </div>
+        </>
+        )}
       </main>
     </div>
   )

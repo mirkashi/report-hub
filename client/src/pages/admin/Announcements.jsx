@@ -1,29 +1,41 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
-import { announcementAPI } from '../../services/api'
+import { announcementAPI, userAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 
 function AdminAnnouncements() {
   const { user } = useAuth()
   const [announcements, setAnnouncements] = useState([])
+  const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: '',
     content: '',
-    priority: 'medium'
+    priority: 'medium',
+    targetAudience: ['all']
   })
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetchAnnouncements()
+    fetchEmployees()
   }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await userAPI.getUsers({ role: 'employee' })
+      setEmployees(response.data?.users || [])
+    } catch (err) {
+      console.error('Error fetching employees:', err)
+    }
+  }
 
   const fetchAnnouncements = async () => {
     try {
       setLoading(true)
-      const data = await announcementAPI.getAll()
-      setAnnouncements(data || [])
+      const response = await announcementAPI.getAll()
+      setAnnouncements(response.data?.announcements || [])
       setError(null)
     } catch (err) {
       console.error('Error fetching announcements:', err)
@@ -40,15 +52,17 @@ function AdminAnnouncements() {
 
     try {
       setSubmitting(true)
-      const createdAnnouncement = await announcementAPI.create({
+      const response = await announcementAPI.create({
         ...newAnnouncement,
         author: user._id,
         isPublished: true,
-        publishedAt: new Date(),
-        targetAudience: ['all']
+        publishedAt: new Date()
       })
-      setAnnouncements([createdAnnouncement, ...announcements])
-      setNewAnnouncement({ title: '', content: '', priority: 'medium' })
+      const createdAnnouncement = response.data?.announcement
+      if (createdAnnouncement) {
+        setAnnouncements([createdAnnouncement, ...announcements])
+      }
+      setNewAnnouncement({ title: '', content: '', priority: 'medium', targetAudience: ['all'] })
       setError(null)
     } catch (err) {
       console.error('Error creating announcement:', err)
@@ -326,14 +340,81 @@ function AdminAnnouncements() {
 
               <div className="form-group">
                 <label className="form-label">Target Audience</label>
-                <select className="input-skeu">
-                  <option value="all">All Employees</option>
-                  <option value="engineering">Engineering Only</option>
-                  <option value="design">Design Only</option>
-                  <option value="marketing">Marketing Only</option>
-                  <option value="sales">Sales Only</option>
-                  <option value="hr">HR Only</option>
-                </select>
+                <div style={{ marginBottom: '12px' }}>
+                  <label 
+                    className="checkbox-skeu"
+                    style={{ 
+                      padding: '12px 16px',
+                      background: newAnnouncement.targetAudience.includes('all') ? '#d4a01720' : 'transparent',
+                      borderRadius: '8px',
+                      border: `2px solid ${newAnnouncement.targetAudience.includes('all') ? '#d4a017' : 'transparent'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={newAnnouncement.targetAudience.includes('all')}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewAnnouncement({ ...newAnnouncement, targetAudience: ['all'] })
+                        } else {
+                          setNewAnnouncement({ ...newAnnouncement, targetAudience: [] })
+                        }
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    <span style={{ fontWeight: 500 }}>
+                      👥 All Employees
+                    </span>
+                  </label>
+                </div>
+                {!newAnnouncement.targetAudience.includes('all') && employees.length > 0 && (
+                  <div style={{ 
+                    maxHeight: '150px', 
+                    overflowY: 'auto',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: '8px',
+                    padding: '8px'
+                  }}>
+                    {employees.map((employee) => (
+                      <label 
+                        key={employee._id}
+                        className="checkbox-skeu"
+                        style={{ 
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          display: 'block',
+                          marginBottom: '4px'
+                        }}
+                      >
+                        <input 
+                          type="checkbox"
+                          checked={newAnnouncement.targetAudience.includes(employee._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewAnnouncement({ 
+                                ...newAnnouncement, 
+                                targetAudience: [...newAnnouncement.targetAudience, employee._id] 
+                              })
+                            } else {
+                              setNewAnnouncement({ 
+                                ...newAnnouncement, 
+                                targetAudience: newAnnouncement.targetAudience.filter(id => id !== employee._id) 
+                              })
+                            }
+                          }}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span style={{ fontSize: '0.9rem' }}>
+                          {employee.name} ({employee.email})
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="divider"></div>
@@ -342,7 +423,7 @@ function AdminAnnouncements() {
                 <button 
                   type="button" 
                   className="btn-skeu btn-secondary"
-                  onClick={() => setNewAnnouncement({ title: '', content: '', priority: 'medium' })}
+                  onClick={() => setNewAnnouncement({ title: '', content: '', priority: 'medium', targetAudience: ['all'] })}
                   disabled={submitting}
                 >
                   <span>↩️</span>
