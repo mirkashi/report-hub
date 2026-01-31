@@ -22,17 +22,23 @@ function DailyTaskInput() {
     try {
       setLoading(true)
       const today = new Date()
-      const data = await reportAPI.getByDate(today.toISOString().split('T')[0])
-      if (data && data.tasks) {
-        setTasks(data.tasks.map((task, idx) => ({
-          id: task._id || idx,
-          title: task.description,
-          description: `Priority: ${task.priority}`,
-          completed: task.status === 'completed',
-          priority: task.priority,
-          duration: task.duration || 1,
-          attachments: task.attachments || []
-        })))
+      const response = await reportAPI.getByDate(today.toISOString().split('T')[0])
+      // API returns { data: { success: true, reports: [...] } }
+      if (response.data && response.data.reports && response.data.reports.length > 0) {
+        const report = response.data.reports[0]
+        if (report.tasks) {
+          setTasks(report.tasks.map((task, idx) => ({
+            id: task._id || idx,
+            title: task.description,
+            description: `Priority: ${task.priority}`,
+            completed: task.status === 'completed',
+            priority: task.priority,
+            duration: task.duration || 1,
+            attachments: task.attachments || []
+          })))
+        } else {
+          setTasks([])
+        }
       } else {
         setTasks([])
       }
@@ -68,23 +74,35 @@ function DailyTaskInput() {
     
     try {
       const today = new Date()
-      const taskData = {
-        type: 'daily',
-        date: today.toISOString(),
-        tasks: [{
-          description: newTask.title,
-          priority: newTask.priority,
-          duration: newTask.duration || 1,
-          status: 'pending'
-        }]
+      const todayStr = today.toISOString().split('T')[0]
+      
+      // Check if a report exists for today
+      const response = await reportAPI.getByDate(todayStr)
+      const existingReport = response.data?.reports?.[0]
+      
+      const newTaskData = {
+        description: newTask.title,
+        priority: newTask.priority,
+        duration: newTask.duration || 1,
+        status: 'pending'
       }
-      await reportAPI.create(taskData)
-      setTasks([...tasks, {
-        id: Date.now(),
-        ...newTask,
-        completed: false,
-        attachments: []
-      }])
+      
+      if (existingReport) {
+        // Update existing report
+        const updatedTasks = [...(existingReport.tasks || []), newTaskData]
+        await reportAPI.updateReport(existingReport._id, { tasks: updatedTasks })
+      } else {
+        // Create new report
+        const taskData = {
+          type: 'daily',
+          date: today.toISOString(),
+          tasks: [newTaskData]
+        }
+        await reportAPI.create(taskData)
+      }
+      
+      // Refresh tasks from server
+      await fetchTodaysTasks()
       setNewTask({ title: '', description: '', priority: 'medium', duration: 1 })
     } catch (err) {
       console.error('Error adding task:', err)
@@ -328,20 +346,31 @@ function DailyTaskInput() {
 
             <div className="divider"></div>
 
-            {/* Quick Add Templates */}
-            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Quick Templates</h3>
+            {/* Today's Tasks Quick Add */}
+            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Today's Tasks</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {['Code Review', 'Bug Fix', 'Meeting', 'Documentation', 'Testing'].map((template) => (
-                <button 
-                  key={template}
-                  type="button"
-                  className="btn-skeu btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '0.8rem' }}
-                  onClick={() => setNewTask({ ...newTask, title: template })}
-                >
-                  {template}
-                </button>
-              ))}
+              {tasks.length > 0 ? (
+                tasks.slice(0, 5).map((task) => (
+                  <button 
+                    key={task.id}
+                    type="button"
+                    className="btn-skeu btn-secondary"
+                    style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+                    onClick={() => setNewTask({ 
+                      ...newTask, 
+                      title: task.title,
+                      priority: task.priority 
+                    })}
+                    title={`Click to add: ${task.title}`}
+                  >
+                    {task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title}
+                  </button>
+                ))
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#8a7a6a', fontStyle: 'italic' }}>
+                  Your tasks for today will appear here for quick re-adding
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -1,69 +1,119 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
 import { useAuth } from '../../context/AuthContext'
+import { reportAPI, announcementAPI } from '../../services/api'
 
 function EmployeeDashboard() {
   const { user } = useAuth()
   const [selectedDay, setSelectedDay] = useState(4) // Friday
+  const [stats, setStats] = useState({
+    totalTasks: 0,
+    completed: 0,
+    pending: 0,
+    reportsSent: 0
+  })
+  const [recentTasks, setRecentTasks] = useState([])
+  const [announcements, setAnnouncements] = useState([])
+  const [weeklyReports, setWeeklyReports] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const weekDays = [
-    { day: 'Mon', date: '27', tasks: 3, completed: true },
-    { day: 'Tue', date: '28', tasks: 4, completed: true },
-    { day: 'Wed', date: '29', tasks: 2, completed: true },
-    { day: 'Thu', date: '30', tasks: 5, completed: true },
-    { day: 'Fri', date: '31', tasks: 3, completed: false },
-    { day: 'Sat', date: '01', tasks: 0, completed: false },
-    { day: 'Sun', date: '02', tasks: 0, completed: false },
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch stats
+      const statsResponse = await reportAPI.getStats()
+      if (statsResponse.data?.success) {
+        const data = statsResponse.data
+        setStats({
+          totalTasks: data.taskStats?.total || 0,
+          completed: data.taskStats?.completed || 0,
+          pending: data.taskStats?.pending || 0,
+          reportsSent: data.totalReports || 0
+        })
+        setWeeklyReports(data.weeklyReports || [])
+      }
+
+      // Fetch recent reports for recent tasks
+      const reportsResponse = await reportAPI.getAllReports({ limit: 5, type: 'daily' })
+      if (reportsResponse.data?.success && reportsResponse.data.reports) {
+        const allTasks = []
+        reportsResponse.data.reports.forEach(report => {
+          if (report.tasks) {
+            report.tasks.forEach((task, idx) => {
+              allTasks.push({
+                id: task._id || `${report._id}-${idx}`,
+                title: task.description,
+                description: `Duration: ${task.duration || 1}h`,
+                status: task.status,
+                dueDate: new Date(report.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                priority: task.priority || 'medium'
+              })
+            })
+          }
+        })
+        setRecentTasks(allTasks.slice(0, 3))
+      }
+
+      // Fetch announcements
+      const announcementsResponse = await announcementAPI.getAll({ limit: 2 })
+      if (announcementsResponse.data?.success && announcementsResponse.data.announcements) {
+        setAnnouncements(announcementsResponse.data.announcements.map(a => ({
+          id: a._id,
+          title: a.title,
+          date: new Date(a.publishedAt || a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          content: a.content
+        })))
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const statsData = [
+    { icon: '📝', label: 'Total Tasks', value: stats.totalTasks.toString(), color: '#d4a017' },
+    { icon: '✅', label: 'Completed', value: stats.completed.toString(), color: '#38a169' },
+    { icon: '⏳', label: 'Pending', value: stats.pending.toString(), color: '#ecc94b' },
+    { icon: '📤', label: 'Reports Sent', value: stats.reportsSent.toString(), color: '#5a8acd' },
   ]
 
-  const stats = [
-    { icon: '📝', label: 'Total Tasks', value: '17', color: '#d4a017' },
-    { icon: '✅', label: 'Completed', value: '14', color: '#38a169' },
-    { icon: '⏳', label: 'Pending', value: '3', color: '#ecc94b' },
-    { icon: '📤', label: 'Reports Sent', value: '12', color: '#5a8acd' },
-  ]
+  // Generate week days dynamically
+  const getWeekDays = () => {
+    const today = new Date()
+    const monday = new Date(today)
+    // Handle Sunday (0) by treating it as 7
+    const dayOfWeek = today.getDay() || 7
+    monday.setDate(today.getDate() - dayOfWeek + 1) // Get Monday of current week
+    
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + i)
+      
+      // Find report for this day
+      const dayStr = day.toISOString().split('T')[0]
+      const dayReport = weeklyReports.find(r => r.date?.split('T')[0] === dayStr)
+      const taskCount = dayReport?.tasks?.length || 0
+      const completedCount = dayReport?.tasks?.filter(t => t.status === 'completed').length || 0
+      
+      days.push({
+        day: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: day.getDate().toString(),
+        tasks: taskCount,
+        completed: taskCount > 0 && completedCount === taskCount
+      })
+    }
+    return days
+  }
 
-  const recentTasks = [
-    {
-      id: 1,
-      title: 'Update API documentation',
-      description: 'Document the new REST API endpoints for user authentication module.',
-      status: 'completed',
-      dueDate: 'Jan 30, 2026',
-      priority: 'High'
-    },
-    {
-      id: 2,
-      title: 'Review pull requests',
-      description: 'Review and approve pending PRs for the frontend team.',
-      status: 'pending',
-      dueDate: 'Jan 31, 2026',
-      priority: 'Medium'
-    },
-    {
-      id: 3,
-      title: 'Fix login bug',
-      description: 'Investigate and fix the session timeout issue reported by QA.',
-      status: 'pending',
-      dueDate: 'Jan 31, 2026',
-      priority: 'High'
-    },
-  ]
-
-  const announcements = [
-    {
-      id: 1,
-      title: 'Team Meeting Tomorrow',
-      date: 'Jan 30, 2026',
-      content: 'Monthly team sync-up at 10:00 AM in Conference Room A.'
-    },
-    {
-      id: 2,
-      title: 'New Report Format',
-      date: 'Jan 28, 2026',
-      content: 'Please use the updated weekly report template starting next week.'
-    },
-  ]
+  const weekDays = getWeekDays()
+  const progressPercent = stats.totalTasks > 0 ? Math.round((stats.completed / stats.totalTasks) * 100) : 0
 
   return (
     <div className="app-layout">
@@ -76,9 +126,15 @@ function EmployeeDashboard() {
           <p>Here's your weekly overview</p>
         </div>
 
+        {loading ? (
+          <div className="panel-raised" style={{ textAlign: 'center', padding: '40px' }}>
+            <p>⏳ Loading your dashboard...</p>
+          </div>
+        ) : (
+        <>
         {/* Stats Cards */}
         <div className="card-grid card-grid-4 animate-slide-up" style={{ marginBottom: '32px' }}>
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <div 
               key={index} 
               className="card-leather"
@@ -132,10 +188,10 @@ function EmployeeDashboard() {
           <div style={{ marginTop: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.9rem' }}>Weekly Progress</span>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>82%</span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{progressPercent}%</span>
             </div>
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: '82%' }}></div>
+              <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
             </div>
           </div>
         </div>
@@ -158,7 +214,7 @@ function EmployeeDashboard() {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {recentTasks.map((task) => (
+              {recentTasks.length > 0 ? recentTasks.map((task) => (
                 <div key={task.id} className="card-paper task-card">
                   <div className="task-card-header">
                     <h4 className="task-card-title">{task.title}</h4>
@@ -172,7 +228,11 @@ function EmployeeDashboard() {
                     <span className="task-meta-item">🔥 {task.priority}</span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="panel-inset" style={{ textAlign: 'center', padding: '40px' }}>
+                  <p style={{ margin: 0, opacity: 0.7 }}>No recent tasks. Add your first task!</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -189,13 +249,17 @@ function EmployeeDashboard() {
             <div className="memo-board" style={{ position: 'relative' }}>
               <div className="memo-pin"></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingTop: '8px' }}>
-                {announcements.map((announcement) => (
+                {announcements.length > 0 ? announcements.map((announcement) => (
                   <div key={announcement.id} className="announcement-card panel-paper">
                     <h4 className="announcement-title">{announcement.title}</h4>
                     <p className="announcement-date">📅 {announcement.date}</p>
                     <p className="announcement-content">{announcement.content}</p>
                   </div>
-                ))}
+                )) : (
+                  <div className="panel-inset" style={{ textAlign: 'center', padding: '40px' }}>
+                    <p style={{ margin: 0, opacity: 0.7 }}>No announcements at this time</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -225,6 +289,8 @@ function EmployeeDashboard() {
             </button>
           </div>
         </div>
+        </>
+        )}
       </main>
     </div>
   )

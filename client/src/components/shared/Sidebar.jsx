@@ -66,12 +66,6 @@ function Sidebar({ type = 'employee' }) {
                 <span className="nav-label">Settings</span>
               </a>
             </li>
-            <li>
-              <a href="#" className="nav-link">
-                <span className="nav-icon">❓</span>
-                <span className="nav-label">Help & Support</span>
-              </a>
-            </li>
           </ul>
         </div>
       </nav>
