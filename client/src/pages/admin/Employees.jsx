@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
 import { userAPI } from '../../services/api'
 
 function AdminEmployees() {
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -173,7 +175,7 @@ function AdminEmployees() {
                             <button 
                               className="btn-skeu btn-secondary"
                               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                              onClick={() => window.location.href = `/admin/employees/${employee._id}`}
+                              onClick={() => navigate(`/admin/employees/${employee._id}`)}
                             >
                               <span>👁️</span>
                               <span>View</span>

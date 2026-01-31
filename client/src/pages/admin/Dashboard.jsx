@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
 import { useAuth } from '../../context/AuthContext'
 import { reportAPI, userAPI } from '../../services/api'
@@ -52,8 +53,13 @@ function AdminDashboard() {
       })
       
       // Format recent reports (last 4)
-      const formatted = allReports
-        .sort((a, b) => new Date(b.submittedAt || b.date) - new Date(a.submittedAt || a.date))
+      const reportsWithDates = allReports.map(report => ({
+        ...report,
+        parsedSubmittedAt: new Date(report.submittedAt || report.date)
+      }))
+      
+      const formatted = reportsWithDates
+        .sort((a, b) => b.parsedSubmittedAt - a.parsedSubmittedAt)
         .slice(0, 4)
         .map(report => ({
           id: report._id,
@@ -229,9 +235,9 @@ function AdminDashboard() {
               }}>
                 📋 Recent Submissions
               </h2>
-              <a href="/admin/reports" className="link-gold" style={{ fontSize: '0.9rem' }}>
+              <Link to="/admin/reports" className="link-gold" style={{ fontSize: '0.9rem' }}>
                 View All →
-              </a>
+              </Link>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -402,21 +408,22 @@ function AdminDashboard() {
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-              <a href="/admin/reports" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
+              <Link to="/admin/reports" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📋</div>
                 <div style={{ fontWeight: 600 }}>Review Reports</div>
-              </a>
-              <a href="/admin/announcements" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
+              </Link>
+              <Link to="/admin/announcements" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📢</div>
                 <div style={{ fontWeight: 600 }}>Announcements</div>
-              </a>
+              </Link>
               <div className="card-metal" style={{ textAlign: 'center', padding: '24px 16px', cursor: 'pointer' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📊</div>
                 <div style={{ fontWeight: 600 }}>Export Data</div>
               </div>
-              <a href="/admin/employees" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
+              <Link to="/admin/employees" className="card-metal" style={{ textDecoration: 'none', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>👥</div>
                 <div style={{ fontWeight: 600 }}>Manage Employees</div>
+              </Link>
               </a>
             </div>
           </div>
