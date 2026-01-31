@@ -17,6 +17,7 @@ import WeeklySubmission from './pages/employee/WeeklySubmission'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminReports from './pages/admin/Reports'
 import AdminAnnouncements from './pages/admin/Announcements'
+import AdminEmployees from './pages/admin/Employees'
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="admin"><AdminAnnouncements /></ProtectedRoute>} />
+          <Route path="/admin/employees" element={<ProtectedRoute requiredRole="admin"><AdminEmployees /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

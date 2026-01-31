@@ -62,6 +62,9 @@ export const userAPI = {
   
   changePassword: (currentPassword, newPassword) => 
     api.put('/users/change-password', { currentPassword, newPassword }),
+  
+  deleteUser: (id) => 
+    api.delete(`/users/${id}`),
 };
 
 export const reportAPI = {

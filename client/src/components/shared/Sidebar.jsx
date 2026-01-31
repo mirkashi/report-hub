@@ -16,6 +16,7 @@ function Sidebar({ type = 'employee' }) {
     { path: '/admin/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/admin/reports', icon: '📋', label: 'Reports' },
     { path: '/admin/announcements', icon: '📢', label: 'Announcements' },
+    { path: '/admin/employees', icon: '👥', label: 'Employees' },
   ]
 
   const links = type === 'admin' ? adminLinks : employeeLinks

@@ -17,8 +17,9 @@ function AdminReports() {
   const fetchReports = async () => {
     try {
       setLoading(true)
-      const data = await reportAPI.getAllReports()
-      const formattedReports = data.map(report => ({
+      const response = await reportAPI.getAllReports()
+      const reportsData = response.data?.reports || []
+      const formattedReports = reportsData.map(report => ({
         id: report._id,
         employee: report.user?.name || 'Unknown',
         avatar: '📄',
