@@ -346,20 +346,31 @@ function DailyTaskInput() {
 
             <div className="divider"></div>
 
-            {/* Quick Add Templates */}
-            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Quick Templates</h3>
+            {/* Recent Tasks Quick Add */}
+            <h3 style={{ fontSize: '1rem', margin: '0 0 12px 0' }}>Recent Tasks</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {['Code Review', 'Bug Fix', 'Meeting', 'Documentation', 'Testing'].map((template) => (
-                <button 
-                  key={template}
-                  type="button"
-                  className="btn-skeu btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '0.8rem' }}
-                  onClick={() => setNewTask({ ...newTask, title: template })}
-                >
-                  {template}
-                </button>
-              ))}
+              {tasks.length > 0 ? (
+                tasks.slice(0, 5).map((task) => (
+                  <button 
+                    key={task.id}
+                    type="button"
+                    className="btn-skeu btn-secondary"
+                    style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+                    onClick={() => setNewTask({ 
+                      ...newTask, 
+                      title: task.title,
+                      priority: task.priority 
+                    })}
+                    title={`Click to add: ${task.title}`}
+                  >
+                    {task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title}
+                  </button>
+                ))
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#8a7a6a', fontStyle: 'italic' }}>
+                  Your recent tasks will appear here for quick re-adding
+                </p>
+              )}
             </div>
           </div>
         </div>
