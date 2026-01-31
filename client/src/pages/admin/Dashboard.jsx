@@ -424,7 +424,6 @@ function AdminDashboard() {
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>👥</div>
                 <div style={{ fontWeight: 600 }}>Manage Employees</div>
               </Link>
-              </a>
             </div>
           </div>
         </div>
