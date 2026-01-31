@@ -2,6 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './styles/skeuomorphic.css'
 import './App.css'
 
+// Context
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+
 // Employee Panel Pages
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -16,24 +20,26 @@ import AdminAnnouncements from './pages/admin/Announcements'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Employee Routes */}
-        <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-        <Route path="/employee/tasks" element={<DailyTaskInput />} />
-        <Route path="/employee/submit" element={<WeeklySubmission />} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/reports" element={<AdminReports />} />
-        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Employee Routes */}
+          <Route path="/employee/dashboard" element={<ProtectedRoute requiredRole="employee"><EmployeeDashboard /></ProtectedRoute>} />
+          <Route path="/employee/tasks" element={<ProtectedRoute requiredRole="employee"><DailyTaskInput /></ProtectedRoute>} />
+          <Route path="/employee/submit" element={<ProtectedRoute requiredRole="employee"><WeeklySubmission /></ProtectedRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
+          <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="admin"><AdminAnnouncements /></ProtectedRoute>} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 

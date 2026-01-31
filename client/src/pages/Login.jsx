@@ -1,25 +1,29 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' })
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const { login, isLoading } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
+    setError('')
     
-    // Simulate login - in real app, this would call an API
-    setTimeout(() => {
-      setIsLoading(false)
-      // Demo: Navigate based on email
-      if (formData.email.includes('admin')) {
+    const result = await login(formData.email, formData.password)
+    
+    if (result.success) {
+      // Navigate based on user role
+      if (result.user.role === 'admin') {
         navigate('/admin/dashboard')
       } else {
         navigate('/employee/dashboard')
       }
-    }, 1000)
+    } else {
+      setError(result.error)
+    }
   }
 
   return (
@@ -56,6 +60,20 @@ function Login() {
           </p>
 
           <form onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+                border: '1px solid #f5c6cb'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
+            
             <div className="form-group">
               <label className="form-label">Email Address</label>
               <input
@@ -113,13 +131,6 @@ function Login() {
             <Link to="/register" className="link-gold">
               Create Account
             </Link>
-          </p>
-        </div>
-
-        {/* Demo Info */}
-        <div className="panel-glass" style={{ marginTop: '24px', textAlign: 'center' }}>
-          <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
-            💡 Demo: Use "admin@..." for Admin panel, any other email for Employee panel
           </p>
         </div>
       </div>

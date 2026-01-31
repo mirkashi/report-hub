@@ -1,8 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import './Sidebar.css'
 
 function Sidebar({ type = 'employee' }) {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const employeeLinks = [
     { path: '/employee/dashboard', icon: '🏠', label: 'Dashboard' },
@@ -18,7 +20,8 @@ function Sidebar({ type = 'employee' }) {
 
   const links = type === 'admin' ? adminLinks : employeeLinks
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 
@@ -79,8 +82,8 @@ function Sidebar({ type = 'employee' }) {
           <span>👤</span>
         </div>
         <div className="user-info">
-          <span className="user-name">{type === 'admin' ? 'Admin User' : 'John Smith'}</span>
-          <span className="user-role">{type === 'admin' ? 'Administrator' : 'Software Engineer'}</span>
+          <span className="user-name">{user?.name || 'User'}</span>
+          <span className="user-role">{user?.department || 'Department'}</span>
         </div>
       </div>
 

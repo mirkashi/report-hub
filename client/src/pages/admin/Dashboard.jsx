@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminDashboard() {
+  const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
 
   const stats = [
@@ -75,7 +77,7 @@ function AdminDashboard() {
       <main className="main-content texture-leather">
         {/* Page Header */}
         <div className="page-header">
-          <h1>📊 Admin Dashboard</h1>
+          <h1>📊 Admin Dashboard - Welcome, {user?.name || 'Admin'}!</h1>
           <p>Monitor and manage weekly report submissions</p>
         </div>
 

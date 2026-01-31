@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { useAuth } from '../../context/AuthContext'
 
 function EmployeeDashboard() {
+  const { user } = useAuth()
   const [selectedDay, setSelectedDay] = useState(4) // Friday
 
   const weekDays = [
@@ -70,7 +72,7 @@ function EmployeeDashboard() {
       <main className="main-content texture-leather">
         {/* Page Header */}
         <div className="page-header">
-          <h1>👋 Welcome back, John!</h1>
+          <h1>👋 Welcome back, {user?.name || 'User'}!</h1>
           <p>Here's your weekly overview</p>
         </div>
 

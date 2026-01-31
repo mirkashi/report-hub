@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -10,18 +11,39 @@ function Register() {
     password: '',
     confirmPassword: ''
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [validationError, setValidationError] = useState('')
+  const { register, isLoading } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setValidationError('Passwords do not match')
+      return false
+    }
+    if (formData.password.length < 6) {
+      setValidationError('Password must be at least 6 characters')
+      return false
+    }
+    return true
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
+    setError('')
+    setValidationError('')
     
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false)
+    if (!validateForm()) {
+      return
+    }
+    
+    const result = await register(formData)
+    
+    if (result.success) {
       navigate('/employee/dashboard')
-    }, 1500)
+    } else {
+      setError(result.error)
+    }
   }
 
   return (
@@ -58,6 +80,34 @@ function Register() {
           </p>
 
           <form onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+                border: '1px solid #f5c6cb'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
+            
+            {validationError && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+                border: '1px solid #f5c6cb'
+              }}>
+                ⚠️ {validationError}
+              </div>
+            )}
+            
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">First Name</label>
@@ -104,12 +154,12 @@ function Register() {
                 required
               >
                 <option value="">Select Department</option>
-                <option value="engineering">Engineering</option>
-                <option value="design">Design</option>
-                <option value="marketing">Marketing</option>
-                <option value="sales">Sales</option>
-                <option value="hr">Human Resources</option>
-                <option value="finance">Finance</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Design">Design</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Sales">Sales</option>
+                <option value="Human Resources">Human Resources</option>
+                <option value="Finance">Finance</option>
               </select>
             </div>
 
