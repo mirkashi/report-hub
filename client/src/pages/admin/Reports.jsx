@@ -466,7 +466,7 @@ function AdminReports() {
                             <h4 style={{ margin: 0, color: '#f0c420' }}>
                               {task.description}
                             </h4>
-                            <span className={`task-status status-${task.status === 'completed' ? 'completed' : task.status === 'in-progress' ? 'pending' : 'pending'}`}>
+                            <span className={`task-status status-${task.status === 'completed' ? 'completed' : 'pending'}`}>
                               {task.status}
                             </span>
                           </div>
@@ -699,6 +699,7 @@ function AdminReports() {
                   className={`btn-skeu ${reviewAction === 'approved' ? 'btn-success' : 'btn-danger'}`}
                   onClick={handleSubmitReview}
                   disabled={reviewAction === 'rejected' && !reviewNotes.trim()}
+                  title={reviewAction === 'rejected' && !reviewNotes.trim() ? 'Please provide a reason for rejection' : ''}
                 >
                   <span>{reviewAction === 'approved' ? '✓' : '↩️'}</span>
                   <span>Confirm {reviewAction === 'approved' ? 'Approval' : 'Rejection'}</span>

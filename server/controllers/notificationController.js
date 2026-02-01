@@ -16,7 +16,7 @@ export const getNotifications = async (req, res, next) => {
 
     const notifications = await Notification.find(query)
       .populate('relatedReport', 'date type status')
-      .limit(limit * 1)
+      .limit(limit)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
 
