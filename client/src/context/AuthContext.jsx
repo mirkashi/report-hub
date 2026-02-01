@@ -69,16 +69,12 @@ export function AuthProvider({ children }) {
       };
 
       const response = await authAPI.register(userData);
-      const { token, user: newUser } = response.data;
+      const { message, user: newUser } = response.data;
       
-      // Store token and user data
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('authUser', JSON.stringify(newUser));
+      // Do NOT auto-login - user must login manually
+      // Do NOT store token or set authenticated state
       
-      setUser(newUser);
-      setIsAuthenticated(true);
-      
-      return { success: true, user: newUser };
+      return { success: true, message, user: newUser };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
       setError(errorMessage);

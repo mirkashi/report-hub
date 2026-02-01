@@ -24,31 +24,18 @@ export const register = async (req, res, next) => {
       position,
     });
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-
-    // Save refresh token to user
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    // Set cookie
-    const cookieOptions = {
-      expires: new Date(
-        Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
-      ),
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    };
-
-    res.cookie('token', accessToken, cookieOptions);
+    // Remove password from output
+    user.password = undefined;
 
     res.status(201).json({
       success: true,
-      token: accessToken,
-      refreshToken,
-      user,
+      message: 'Account created successfully. Please log in.',
+      user: {
+        name: user.name,
+        email: user.email,
+        department: user.department,
+        position: user.position,
+      },
     });
   } catch (error) {
     next(error);
