@@ -13,6 +13,7 @@ function EmployeeDashboard() {
     reportsSent: 0
   })
   const [recentTasks, setRecentTasks] = useState([])
+  const [pendingTasks, setPendingTasks] = useState([])
   const [announcements, setAnnouncements] = useState([])
   const [weeklyReports, setWeeklyReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -39,24 +40,37 @@ function EmployeeDashboard() {
       }
 
       // Fetch recent reports for recent tasks
-      const reportsResponse = await reportAPI.getAllReports({ limit: 5, type: 'daily' })
+      const reportsResponse = await reportAPI.getAllReports({ limit: 10, type: 'daily' })
       if (reportsResponse.data?.success && reportsResponse.data.reports) {
         const allTasks = []
+        const allPendingTasks = []
+        
         reportsResponse.data.reports.forEach(report => {
           if (report.tasks) {
             report.tasks.forEach((task, idx) => {
-              allTasks.push({
+              const taskObj = {
                 id: task._id || `${report._id}-${idx}`,
                 title: task.description,
                 description: `Duration: ${task.duration || 1}h`,
                 status: task.status,
                 dueDate: new Date(report.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                priority: task.priority || 'medium'
-              })
+                priority: task.priority || 'medium',
+                reportId: report._id
+              }
+              
+              // Add to all tasks
+              allTasks.push(taskObj)
+              
+              // Add to pending tasks if not completed
+              if (task.status !== 'completed') {
+                allPendingTasks.push(taskObj)
+              }
             })
           }
         })
+        
         setRecentTasks(allTasks.slice(0, 3))
+        setPendingTasks(allPendingTasks.slice(0, 6))
       }
 
       // Fetch announcements
@@ -198,6 +212,117 @@ function EmployeeDashboard() {
 
         {/* Main Content Grid */}
         <div className="card-grid card-grid-2">
+          {/* Pending Tasks - NEW SECTION */}
+          <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ 
+                fontFamily: 'var(--font-display)', 
+                fontSize: '1.25rem', 
+                margin: 0
+              }}>
+                ⏳ Pending Tasks
+              </h2>
+              {pendingTasks.length > 0 && (
+                <span className="notification-badge">{pendingTasks.length}</span>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {pendingTasks.length > 0 ? pendingTasks.map((task) => (
+                <div key={task.id} className="card-leather" style={{ 
+                  padding: '20px',
+                  background: 'linear-gradient(145deg, #5c4033 0%, #4a3728 100%)',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(0, 0, 0, 0.3)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Leather texture overlay */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
+                    pointerEvents: 'none'
+                  }}></div>
+                  
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <h4 style={{ 
+                        margin: 0, 
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        color: '#f5f0e6',
+                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                      }}>
+                        {task.title}
+                      </h4>
+                      <span className={`task-status status-${task.status}`} style={{
+                        background: task.status === 'in-progress' 
+                          ? 'linear-gradient(145deg, #ecc94b, #d69e2e)'
+                          : 'linear-gradient(145deg, #ed8936, #dd6b20)',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                      }}>
+                        {task.status === 'in-progress' ? '🔄 In Progress' : '⏸️ Pending'}
+                      </span>
+                    </div>
+                    
+                    <p style={{ 
+                      margin: '0 0 12px 0', 
+                      color: '#d4c5a9',
+                      fontSize: '0.9rem',
+                      lineHeight: 1.6
+                    }}>
+                      {task.description}
+                    </p>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '16px', 
+                      flexWrap: 'wrap',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <span style={{ 
+                        fontSize: '0.85rem', 
+                        color: '#f0c420',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 500
+                      }}>
+                        📅 {task.dueDate}
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.85rem', 
+                        color: task.priority === 'high' ? '#fc8181' : task.priority === 'medium' ? '#f6e05e' : '#9ae6b4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 500
+                      }}>
+                        🔥 {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="panel-inset" style={{ textAlign: 'center', padding: '40px' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '12px', opacity: 0.5 }}>✅</div>
+                  <p style={{ margin: 0, opacity: 0.7 }}>All tasks completed! Great job!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Recent Tasks */}
           <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

@@ -212,114 +212,253 @@ function AdminReports() {
           </div>
 
           {/* Report Detail */}
-          <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="panel-raised animate-slide-up scrollbar-skeu" style={{ 
+            animationDelay: '0.2s',
+            maxHeight: '70vh',
+            overflowY: 'auto'
+          }}>
             {selectedReport ? (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ 
-                      width: '64px', 
-                      height: '64px', 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '2.5rem',
-                      background: 'linear-gradient(145deg, #5a6a7d, #4a5a6d)',
-                      borderRadius: '50%',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                {/* Report Header */}
+                <div style={{ 
+                  background: 'linear-gradient(145deg, #4a3728 0%, #3d2b1f 100%)',
+                  padding: '24px',
+                  margin: '-24px -24px 24px -24px',
+                  borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+                  borderBottom: '3px solid rgba(212, 160, 23, 0.3)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                      <div style={{ 
+                        width: '64px', 
+                        height: '64px', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2.5rem',
+                        background: 'linear-gradient(145deg, #5a6a7d, #4a5a6d)',
+                        borderRadius: '50%',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                      }}>
+                        {selectedReport.avatar}
+                      </div>
+                      <div>
+                        <h2 style={{ 
+                          margin: '0 0 6px 0', 
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '1.5rem',
+                          color: '#f0c420',
+                          textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                        }}>
+                          {selectedReport.employee}
+                        </h2>
+                        <p style={{ margin: '0 0 4px 0', opacity: 0.8, fontSize: '0.95rem' }}>
+                          ✉️ {selectedReport.email}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.7 }}>
+                          🏢 {selectedReport.department} • 📅 {selectedReport.week}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`task-status status-${getStatusColor(selectedReport.status)}`} style={{
+                      fontSize: '0.85rem',
+                      padding: '8px 16px',
+                      textTransform: 'uppercase',
+                      fontWeight: 700
                     }}>
-                      {selectedReport.avatar}
-                    </div>
-                    <div>
-                      <h2 style={{ margin: '0 0 4px 0', fontFamily: 'var(--font-display)' }}>
-                        {selectedReport.employee}
-                      </h2>
-                      <p style={{ margin: '0 0 4px 0', opacity: 0.7 }}>{selectedReport.email}</p>
-                      <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.6 }}>
-                        {selectedReport.department} • {selectedReport.week}
-                      </p>
-                    </div>
+                      {selectedReport.status}
+                    </span>
                   </div>
-                  <span className={`task-status status-${getStatusColor(selectedReport.status)}`}>
-                    {selectedReport.status}
-                  </span>
                 </div>
 
                 {/* Stats */}
                 <div className="card-grid card-grid-3" style={{ marginBottom: '24px' }}>
-                  <div className="panel-inset" style={{ textAlign: 'center', padding: '16px' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                  <div className="panel-inset" style={{ 
+                    textAlign: 'center', 
+                    padding: '20px',
+                    background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '2px solid rgba(212, 160, 23, 0.2)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#d4a017', marginBottom: '8px' }}>
                       {selectedReport.tasksCompleted}/{selectedReport.totalTasks}
                     </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Tasks</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7, fontWeight: 600 }}>Tasks Completed</div>
                   </div>
-                  <div className="panel-inset" style={{ textAlign: 'center', padding: '16px' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                      {Math.round((selectedReport.tasksCompleted / selectedReport.totalTasks) * 100)}%
+                  <div className="panel-inset" style={{ 
+                    textAlign: 'center', 
+                    padding: '20px',
+                    background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '2px solid rgba(212, 160, 23, 0.2)'
+                  }}>
+                    <div style={{ 
+                      fontSize: '2rem', 
+                      fontWeight: 700, 
+                      color: selectedReport.tasksCompleted === selectedReport.totalTasks ? '#38a169' : '#ecc94b',
+                      marginBottom: '8px'
+                    }}>
+                      {selectedReport.totalTasks > 0 ? Math.round((selectedReport.tasksCompleted / selectedReport.totalTasks) * 100) : 0}%
                     </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Completion</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7, fontWeight: 600 }}>Completion Rate</div>
                   </div>
-                  <div className="panel-inset" style={{ textAlign: 'center', padding: '16px' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{selectedReport.hoursWorked}h</div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Hours</div>
+                  <div className="panel-inset" style={{ 
+                    textAlign: 'center', 
+                    padding: '20px',
+                    background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '2px solid rgba(212, 160, 23, 0.2)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#5a8acd', marginBottom: '8px' }}>
+                      {selectedReport.hoursWorked}h
+                    </div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7, fontWeight: 600 }}>Hours Worked</div>
                   </div>
                 </div>
 
-                {/* Summary */}
+                {/* Report Summary */}
                 <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem' }}>📝 Summary</h3>
-                  <div className="panel-inset" style={{ padding: '16px' }}>
-                    <p style={{ margin: 0, lineHeight: 1.6 }}>{selectedReport.summary}</p>
+                  <h3 style={{ 
+                    margin: '0 0 16px 0', 
+                    fontSize: '1.1rem',
+                    fontFamily: 'var(--font-display)',
+                    color: '#f0c420',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span>📝</span> Report Summary
+                  </h3>
+                  <div className="panel-inset" style={{ 
+                    padding: '20px',
+                    background: 'linear-gradient(180deg, #fdfbf7 0%, #f8f4eb 100%)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    <p style={{ 
+                      margin: 0, 
+                      lineHeight: 1.8, 
+                      color: '#2d2d2d',
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'var(--font-body)'
+                    }}>
+                      {selectedReport.summary || 'No summary provided'}
+                    </p>
                   </div>
                 </div>
+
+                {/* Tasks Breakdown */}
+                {selectedReport.totalTasks > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ 
+                      margin: '0 0 16px 0', 
+                      fontSize: '1.1rem',
+                      fontFamily: 'var(--font-display)',
+                      color: '#f0c420',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>✅</span> Tasks Overview ({selectedReport.totalTasks} total)
+                    </h3>
+                    <div style={{ 
+                      marginBottom: '16px',
+                      background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                      padding: '12px',
+                      borderRadius: 'var(--radius-md)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                        <span>Progress</span>
+                        <span style={{ fontWeight: 600 }}>
+                          {selectedReport.tasksCompleted} of {selectedReport.totalTasks} completed
+                        </span>
+                      </div>
+                      <div className="progress-bar" style={{ height: '8px' }}>
+                        <div 
+                          className="progress-fill" 
+                          style={{ 
+                            width: `${selectedReport.totalTasks > 0 ? (selectedReport.tasksCompleted / selectedReport.totalTasks) * 100 : 0}%`,
+                            background: selectedReport.tasksCompleted === selectedReport.totalTasks 
+                              ? 'linear-gradient(90deg, #38a169, #48bb78)' 
+                              : 'linear-gradient(90deg, #ecc94b, #f6e05e)'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Attachments */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem' }}>📎 Attachments</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {selectedReport.attachments.map((file, index) => (
-                      <div 
-                        key={index}
-                        className="file-clip"
-                      >
-                        {file}
-                      </div>
-                    ))}
+                {selectedReport.attachments && selectedReport.attachments.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ 
+                      margin: '0 0 12px 0', 
+                      fontSize: '1.1rem',
+                      fontFamily: 'var(--font-display)',
+                      color: '#f0c420',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>📎</span> Attachments ({selectedReport.attachments.length})
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {selectedReport.attachments.map((file, index) => (
+                        <div 
+                          key={index}
+                          className="file-clip"
+                        >
+                          {file}
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Metadata */}
+                <div style={{ 
+                  padding: '16px',
+                  background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '24px',
+                  border: '1px solid rgba(212, 160, 23, 0.2)'
+                }}>
+                  <p style={{ fontSize: '0.9rem', opacity: 0.8, margin: 0 }}>
+                    📤 <strong>Submitted:</strong> {selectedReport.submittedAt}
+                  </p>
                 </div>
 
-                {/* Submitted Info */}
-                <p style={{ fontSize: '0.85rem', opacity: 0.6, marginBottom: '24px' }}>
-                  Submitted: {selectedReport.submittedAt}
-                </p>
-
                 {/* Actions */}
-                <div className="divider"></div>
-                <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
-                  {selectedReport.status === 'pending' && (
-                    <>
-                      <button className="btn-skeu btn-danger">
-                        <span>↩️</span>
-                        <span>Request Revision</span>
+                <div style={{ 
+                  borderTop: '2px solid rgba(212, 160, 23, 0.3)',
+                  paddingTop: '20px'
+                }}>
+                  <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                    {selectedReport.status === 'pending' && (
+                      <>
+                        <button className="btn-skeu btn-danger">
+                          <span>↩️</span>
+                          <span>Request Revision</span>
+                        </button>
+                        <button className="btn-skeu btn-success">
+                          <span>✓</span>
+                          <span>Approve Report</span>
+                        </button>
+                      </>
+                    )}
+                    {selectedReport.status === 'approved' && (
+                      <button className="btn-skeu btn-secondary">
+                        <span>📥</span>
+                        <span>Download Report</span>
                       </button>
-                      <button className="btn-skeu btn-success">
-                        <span>✓</span>
-                        <span>Approve Report</span>
+                    )}
+                    {selectedReport.status === 'revision' && (
+                      <button className="btn-skeu btn-primary">
+                        <span>📧</span>
+                        <span>Send Reminder</span>
                       </button>
-                    </>
-                  )}
-                  {selectedReport.status === 'approved' && (
-                    <button className="btn-skeu btn-secondary">
-                      <span>📥</span>
-                      <span>Download Report</span>
-                    </button>
-                  )}
-                  {selectedReport.status === 'revision' && (
-                    <button className="btn-skeu btn-primary">
-                      <span>📧</span>
-                      <span>Send Reminder</span>
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
