@@ -25,6 +25,8 @@ function WeeklySubmission() {
   const [selectedTasks, setSelectedTasks] = useState([])
   // eslint-disable-next-line no-unused-vars
   const [attachedFiles, setAttachedFiles] = useState([])
+  const [showPreview, setShowPreview] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
 
   useEffect(() => {
     fetchWeeklyData()
@@ -131,29 +133,7 @@ function WeeklySubmission() {
 
     try {
       setIsSubmitting(true)
-      const today = new Date()
-      
-      // Prepare tasks from selected completed tasks
-      const tasksToInclude = completedTasks
-        .filter(task => selectedTasks.includes(task.id))
-        .map(task => ({
-          description: task.description,
-          priority: task.priority,
-          duration: task.duration,
-          status: 'completed'
-        }))
-      
-      // Combine notes
-      const notes = `${summary}\n\nChallenges: ${challenges}\n\nNext Week: ${nextWeekPlan}`
-      
-      await reportAPI.create({
-        type: 'weekly',
-        date: today.toISOString(),
-        tasks: tasksToInclude,
-        notes: notes.trim(),
-        status: 'submitted',
-        submittedAt: new Date()
-      })
+      await submitReport('submitted')
       setIsSubmitting(false)
       setShowSuccess(true)
     } catch (err) {
@@ -161,6 +141,219 @@ function WeeklySubmission() {
       setIsSubmitting(false)
       setError('Failed to submit report')
     }
+  }
+
+  const prepareReportData = (status) => {
+    const today = new Date()
+    
+    // Prepare tasks from selected completed tasks - Include ALL task details
+    const tasksToInclude = completedTasks
+      .filter(task => selectedTasks.includes(task.id))
+      .map(task => ({
+        description: task.description,
+        priority: task.priority,
+        duration: task.duration,
+        status: 'completed'
+      }))
+    
+    // Combine notes with clear sections
+    const notes = `Weekly Summary:\n${summary}\n\nChallenges & Blockers:\n${challenges || 'None reported'}\n\nNext Week's Plan:\n${nextWeekPlan || 'To be determined'}`
+    
+    const reportData = {
+      type: 'weekly',
+      date: today.toISOString(),
+      tasks: tasksToInclude,
+      notes: notes.trim(),
+      status
+    }
+
+    if (status === 'submitted') {
+      reportData.submittedAt = new Date()
+    }
+
+    return reportData
+  }
+
+  const submitReport = async (status) => {
+    const reportData = prepareReportData(status)
+    await reportAPI.create(reportData)
+  }
+
+  const handleSaveDraft = async () => {
+    try {
+      await submitReport('draft')
+      setDraftSaved(true)
+      setTimeout(() => setDraftSaved(false), 3000)
+    } catch (err) {
+      console.error('Error saving draft:', err)
+      setError('Failed to save draft')
+    }
+  }
+
+  const handlePreview = () => {
+    setShowPreview(true)
+  }
+
+  if (showPreview) {
+    return (
+      <div className="app-layout">
+        <Sidebar type="employee" />
+        <main className="main-content texture-leather">
+          <div className="page-header">
+            <h1>📄 Report Preview</h1>
+            <p>Review your weekly report before submitting</p>
+          </div>
+
+          {/* Preview Panel */}
+          <div className="panel-raised animate-slide-up" style={{ maxWidth: '900px', margin: '0 auto' }}>
+            {/* Header */}
+            <div style={{ 
+              borderBottom: '2px solid rgba(212, 160, 23, 0.3)', 
+              paddingBottom: '20px', 
+              marginBottom: '24px' 
+            }}>
+              <h2 style={{ 
+                fontFamily: 'var(--font-display)', 
+                fontSize: '1.75rem', 
+                margin: '0 0 12px 0',
+                color: '#d4a017'
+              }}>
+                Weekly Report: {weekSummary.startDate} - {weekSummary.endDate}
+              </h2>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.95rem', opacity: 0.8 }}>
+                  📝 {selectedTasks.length} tasks included
+                </span>
+                <span style={{ fontSize: '0.95rem', opacity: 0.8 }}>
+                  ⏱️ {weekSummary.hoursWorked} hours worked
+                </span>
+                <span style={{ fontSize: '0.95rem', opacity: 0.8 }}>
+                  ✅ {weekSummary.completedTasks} tasks completed
+                </span>
+              </div>
+            </div>
+
+            {/* Summary Section */}
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ 
+                fontFamily: 'var(--font-display)', 
+                fontSize: '1.25rem',
+                margin: '0 0 16px 0',
+                color: '#f0c420'
+              }}>
+                📋 Weekly Summary
+              </h3>
+              <div className="panel-inset" style={{ padding: '20px' }}>
+                <p style={{ margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                  {summary || 'No summary provided'}
+                </p>
+              </div>
+            </div>
+
+            {/* Challenges Section */}
+            {challenges && (
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ 
+                  fontFamily: 'var(--font-display)', 
+                  fontSize: '1.25rem',
+                  margin: '0 0 16px 0',
+                  color: '#f0c420'
+                }}>
+                  ⚠️ Challenges & Blockers
+                </h3>
+                <div className="panel-inset" style={{ padding: '20px' }}>
+                  <p style={{ margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {challenges}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Next Week's Plan */}
+            {nextWeekPlan && (
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ 
+                  fontFamily: 'var(--font-display)', 
+                  fontSize: '1.25rem',
+                  margin: '0 0 16px 0',
+                  color: '#f0c420'
+                }}>
+                  📅 Next Week's Plan
+                </h3>
+                <div className="panel-inset" style={{ padding: '20px' }}>
+                  <p style={{ margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {nextWeekPlan}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tasks Included */}
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ 
+                fontFamily: 'var(--font-display)', 
+                fontSize: '1.25rem',
+                margin: '0 0 16px 0',
+                color: '#f0c420'
+              }}>
+                ✅ Completed Tasks ({selectedTasks.length})
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {completedTasks
+                  .filter(task => selectedTasks.includes(task.id))
+                  .map((task, idx) => (
+                    <div key={task.id} className="card-paper" style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          background: 'linear-gradient(145deg, #38a169, #2f855a)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          flexShrink: 0
+                        }}>
+                          {idx + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, marginBottom: '4px', color: '#3d2b1f' }}>
+                            {task.description}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#8a7a6a' }}>
+                            📅 {task.date} • ⏱️ {task.duration}h • 🔥 {task.priority}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="action-buttons" style={{ justifyContent: 'flex-end', paddingTop: '20px', borderTop: '2px solid rgba(212, 160, 23, 0.3)' }}>
+              <button 
+                className="btn-skeu btn-secondary"
+                onClick={() => setShowPreview(false)}
+              >
+                <span>✏️</span>
+                <span>Edit Report</span>
+              </button>
+              <button 
+                className="btn-3d"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? '⏳ Submitting...' : '📤 Submit Report'}
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (showSuccess) {
@@ -412,16 +605,46 @@ function WeeklySubmission() {
           <div className="card-grid card-grid-2" style={{ marginBottom: '32px' }}>
             {/* Summary & Notes */}
             <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <h2 style={{ 
-                fontFamily: 'var(--font-display)', 
-                fontSize: '1.25rem', 
-                margin: '0 0 24px 0'
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                marginBottom: '24px',
+                paddingBottom: '16px',
+                borderBottom: '2px solid rgba(212, 160, 23, 0.2)'
               }}>
-                📝 Weekly Summary
-              </h2>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'linear-gradient(145deg, #d4a017, #b7860b)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.75rem',
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'
+                }}>
+                  📝
+                </div>
+                <h2 style={{ 
+                  fontFamily: 'var(--font-display)', 
+                  fontSize: '1.25rem', 
+                  margin: 0
+                }}>
+                  Weekly Summary
+                </h2>
+              </div>
 
               <div className="form-group">
-                <label className="form-label">Summary of Accomplishments *</label>
+                <label className="form-label" style={{ 
+                  fontWeight: 600, 
+                  fontSize: '0.95rem',
+                  color: '#f0c420',
+                  marginBottom: '10px',
+                  display: 'block'
+                }}>
+                  Summary of Accomplishments *
+                </label>
                 <textarea
                   className="input-skeu"
                   placeholder="Describe your key accomplishments this week..."
@@ -431,10 +654,26 @@ function WeeklySubmission() {
                   required
                   style={{ resize: 'vertical', minHeight: '100px' }}
                 />
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  opacity: 0.6, 
+                  marginTop: '6px',
+                  fontStyle: 'italic'
+                }}>
+                  Describe what you accomplished this week
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Challenges & Blockers</label>
+                <label className="form-label" style={{ 
+                  fontWeight: 600, 
+                  fontSize: '0.95rem',
+                  color: '#f0c420',
+                  marginBottom: '10px',
+                  display: 'block'
+                }}>
+                  Challenges & Blockers
+                </label>
                 <textarea
                   className="input-skeu"
                   placeholder="Any challenges or blockers you faced..."
@@ -443,10 +682,26 @@ function WeeklySubmission() {
                   onChange={(e) => setChallenges(e.target.value)}
                   style={{ resize: 'vertical', minHeight: '80px' }}
                 />
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  opacity: 0.6, 
+                  marginTop: '6px',
+                  fontStyle: 'italic'
+                }}>
+                  Optional: List any obstacles or issues encountered
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Next Week's Plan</label>
+                <label className="form-label" style={{ 
+                  fontWeight: 600, 
+                  fontSize: '0.95rem',
+                  color: '#f0c420',
+                  marginBottom: '10px',
+                  display: 'block'
+                }}>
+                  Next Week's Plan
+                </label>
                 <textarea
                   className="input-skeu"
                   placeholder="Outline your plans for next week..."
@@ -455,18 +710,48 @@ function WeeklySubmission() {
                   onChange={(e) => setNextWeekPlan(e.target.value)}
                   style={{ resize: 'vertical', minHeight: '80px' }}
                 />
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  opacity: 0.6, 
+                  marginTop: '6px',
+                  fontStyle: 'italic'
+                }}>
+                  Optional: Outline your goals and plans for next week
+                </div>
               </div>
             </div>
 
             {/* Attachments */}
             <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <h2 style={{ 
-                fontFamily: 'var(--font-display)', 
-                fontSize: '1.25rem', 
-                margin: '0 0 24px 0'
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                marginBottom: '24px',
+                paddingBottom: '16px',
+                borderBottom: '2px solid rgba(212, 160, 23, 0.2)'
               }}>
-                📎 Attachments
-              </h2>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'linear-gradient(145deg, #5a8acd, #4a7abd)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.75rem',
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'
+                }}>
+                  📎
+                </div>
+                <h2 style={{ 
+                  fontFamily: 'var(--font-display)', 
+                  fontSize: '1.25rem', 
+                  margin: 0
+                }}>
+                  Attachments
+                </h2>
+              </div>
 
               {/* Upload Area */}
               <div 
@@ -532,6 +817,20 @@ function WeeklySubmission() {
 
           {/* Submit Section */}
           <div className="panel-raised animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            {draftSaved && (
+              <div style={{ 
+                padding: '12px 20px', 
+                marginBottom: '20px',
+                background: 'linear-gradient(145deg, #38a169, #2f855a)',
+                borderRadius: 'var(--radius-md)',
+                color: 'white',
+                textAlign: 'center',
+                fontWeight: 600,
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+              }}>
+                ✓ Draft saved successfully!
+              </div>
+            )}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -544,22 +843,32 @@ function WeeklySubmission() {
                   Ready to Submit?
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.7 }}>
-                  Review your report before submitting. This action cannot be undone.
+                  Review your report before submitting. You can save as draft or preview first.
                 </p>
               </div>
               <div className="action-buttons">
-                <button type="button" className="btn-skeu btn-secondary">
+                <button 
+                  type="button" 
+                  className="btn-skeu btn-secondary"
+                  onClick={handleSaveDraft}
+                  disabled={!summary.trim()}
+                >
                   <span>💾</span>
                   <span>Save Draft</span>
                 </button>
-                <button type="button" className="btn-skeu btn-secondary">
+                <button 
+                  type="button" 
+                  className="btn-skeu btn-secondary"
+                  onClick={handlePreview}
+                  disabled={!summary.trim()}
+                >
                   <span>👁️</span>
                   <span>Preview</span>
                 </button>
                 <button 
                   type="submit" 
                   className="btn-3d"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !summary.trim()}
                   style={{ minWidth: '200px' }}
                 >
                   {isSubmitting ? (
