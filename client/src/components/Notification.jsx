@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import '../styles/notification.css'
 
 function Notification({ type = 'success', title, message, onClose, duration = 5000 }) {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
+
+  const handleClose = useCallback(() => {
+    setIsExiting(true)
+    setTimeout(() => {
+      setIsVisible(false)
+      if (onClose) onClose()
+    }, 300)
+  }, [onClose])
 
   useEffect(() => {
     // Trigger entrance animation
@@ -16,15 +24,7 @@ function Notification({ type = 'success', title, message, onClose, duration = 50
       }, duration)
       return () => clearTimeout(timer)
     }
-  }, [duration])
-
-  const handleClose = () => {
-    setIsExiting(true)
-    setTimeout(() => {
-      setIsVisible(false)
-      if (onClose) onClose()
-    }, 300)
-  }
+  }, [duration, handleClose])
 
   const icons = {
     success: '✓',
