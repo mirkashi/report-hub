@@ -327,7 +327,10 @@ export const getReportStats = async (req, res, next) => {
     // Calculate task counts
     const totalTasks = taskStats.reduce((sum, stat) => sum + stat.count, 0);
     const completedTasks = taskStats.find(s => s._id === 'completed')?.count || 0;
-    const pendingTasks = taskStats.find(s => s._id === 'pending')?.count || 0;
+    // Pending includes both 'pending' and 'in-progress' tasks
+    const pendingStatusCount = taskStats.find(s => s._id === 'pending')?.count || 0;
+    const inProgressCount = taskStats.find(s => s._id === 'in-progress')?.count || 0;
+    const pendingTasks = pendingStatusCount + inProgressCount;
 
     res.status(200).json({
       success: true,
