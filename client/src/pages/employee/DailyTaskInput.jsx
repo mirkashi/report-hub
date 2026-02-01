@@ -5,8 +5,8 @@ import { reportAPI } from '../../services/api'
 function DailyTaskInput() {
   const [selectedDay, setSelectedDay] = useState(4) // Friday
   const [tasks, setTasks] = useState([])
+  const [reportId, setReportId] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -22,10 +22,17 @@ function DailyTaskInput() {
     try {
       setLoading(true)
       const today = new Date()
-      const response = await reportAPI.getByDate(today.toISOString().split('T')[0])
+      // Use local date to avoid timezone issues
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const todayStr = `${year}-${month}-${day}`
+      
+      const response = await reportAPI.getByDate(todayStr)
       // API returns { data: { success: true, reports: [...] } }
       if (response.data && response.data.reports && response.data.reports.length > 0) {
         const report = response.data.reports[0]
+        setReportId(report._id)
         if (report.tasks) {
           setTasks(report.tasks.map((task, idx) => ({
             id: task._id || idx,
@@ -40,13 +47,13 @@ function DailyTaskInput() {
           setTasks([])
         }
       } else {
+        setReportId(null)
         setTasks([])
       }
-      setError(null)
     } catch (err) {
       console.error('Error fetching tasks:', err)
+      setReportId(null)
       setTasks([])
-      setError(null) // Don't show error for missing report
     } finally {
       setLoading(false)
     }
@@ -62,10 +69,32 @@ function DailyTaskInput() {
     { day: 'Sun', date: '02', month: 'Feb' },
   ]
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ))
+  const toggleTask = async (id) => {
+    if (!reportId) return
+    
+    try {
+      // Update UI immediately for better UX
+      const updatedTasks = tasks.map(task => 
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+      setTasks(updatedTasks)
+      
+      // Prepare tasks for backend (convert completed boolean to status string)
+      const backendTasks = updatedTasks.map(task => ({
+        description: task.title,
+        priority: task.priority,
+        duration: task.duration,
+        status: task.completed ? 'completed' : 'pending'
+      }))
+      
+      // Update on backend
+      await reportAPI.updateReport(reportId, { tasks: backendTasks })
+    } catch (err) {
+      console.error('Error toggling task:', err)
+      // Revert on error
+      await fetchTodaysTasks()
+      
+    }
   }
 
   const addTask = async (e) => {
@@ -74,7 +103,11 @@ function DailyTaskInput() {
     
     try {
       const today = new Date()
-      const todayStr = today.toISOString().split('T')[0]
+      // Use local date to avoid timezone issues
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const todayStr = `${year}-${month}-${day}`
       
       // Check if a report exists for today
       const response = await reportAPI.getByDate(todayStr)
@@ -92,10 +125,11 @@ function DailyTaskInput() {
         const updatedTasks = [...(existingReport.tasks || []), newTaskData]
         await reportAPI.updateReport(existingReport._id, { tasks: updatedTasks })
       } else {
-        // Create new report
+        // Create new report with local date at noon to avoid timezone issues
+        const localDate = new Date(year, today.getMonth(), today.getDate(), 12, 0, 0)
         const taskData = {
           type: 'daily',
-          date: today.toISOString(),
+          date: localDate.toISOString(),
           tasks: [newTaskData]
         }
         await reportAPI.create(taskData)
@@ -106,7 +140,7 @@ function DailyTaskInput() {
       setNewTask({ title: '', description: '', priority: 'medium', duration: 1 })
     } catch (err) {
       console.error('Error adding task:', err)
-      setError('Failed to add task')
+      
     }
   }
 
@@ -116,7 +150,7 @@ function DailyTaskInput() {
       setTasks(tasks.filter(task => task.id !== id))
     } catch (err) {
       console.error('Error deleting task:', err)
-      setError('Failed to delete task')
+      
     }
   }
 

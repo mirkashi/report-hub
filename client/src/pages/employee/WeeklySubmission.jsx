@@ -21,6 +21,9 @@ function WeeklySubmission() {
     hoursWorked: 0
   })
   const [dailySummary, setDailySummary] = useState([])
+  const [completedTasks, setCompletedTasks] = useState([])
+  const [selectedTasks, setSelectedTasks] = useState([])
+  // eslint-disable-next-line no-unused-vars
   const [attachedFiles, setAttachedFiles] = useState([])
 
   useEffect(() => {
@@ -30,23 +33,86 @@ function WeeklySubmission() {
   const fetchWeeklyData = async () => {
     try {
       setLoading(true)
-      const data = await reportAPI.getAllReports()
-      if (data && data.length > 0) {
-        const latestReport = data[0]
-        const completed = latestReport.tasks?.filter(t => t.status === 'completed').length || 0
-        const total = latestReport.tasks?.length || 0
-        const hours = latestReport.tasks?.reduce((sum, t) => sum + (t.duration || 0), 0) || 0
+      
+      // Get the current week's start and end dates
+      const today = new Date()
+      const monday = new Date(today)
+      const dayOfWeek = today.getDay() || 7 // Sunday = 0, convert to 7
+      monday.setDate(today.getDate() - dayOfWeek + 1)
+      
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+      
+      // Format dates for display
+      const startDate = monday.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      const endDate = sunday.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      
+      // Fetch all daily reports for the current week
+      const response = await reportAPI.getAllReports({ type: 'daily' })
+      const reports = response.data?.reports || []
+      
+      // Filter reports for current week
+      const weekReports = reports.filter(report => {
+        const reportDate = new Date(report.date)
+        return reportDate >= monday && reportDate <= sunday
+      })
+      
+      // Collect all tasks and stats
+      let totalTasks = 0
+      let completedCount = 0
+      let totalHours = 0
+      const allCompletedTasks = []
+      const dailyBreakdown = []
+      
+      weekReports.forEach(report => {
+        const reportTasks = report.tasks || []
+        const reportDate = new Date(report.date)
+        const dayName = reportDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
         
-        setWeekSummary({
-          startDate: new Date(latestReport.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-          endDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-          totalTasks: total,
-          completedTasks: completed,
-          pendingTasks: total - completed,
-          hoursWorked: hours
+        let dayCompleted = 0
+        let dayHours = 0
+        
+        reportTasks.forEach((task, taskIndex) => {
+          totalTasks++
+          dayHours += task.duration || 0
+          
+          if (task.status === 'completed') {
+            completedCount++
+            dayCompleted++
+            allCompletedTasks.push({
+              id: task._id || `${report._id}-task-${taskIndex}`,
+              description: task.description,
+              priority: task.priority || 'medium',
+              duration: task.duration || 1,
+              date: dayName,
+              reportId: report._id
+            })
+          }
         })
-        setAttachedFiles(latestReport.attachments || [])
-      }
+        
+        totalHours += dayHours
+        dailyBreakdown.push({
+          day: dayName,
+          tasks: reportTasks.length,
+          completed: dayCompleted,
+          hours: dayHours
+        })
+      })
+      
+      setWeekSummary({
+        startDate,
+        endDate,
+        totalTasks,
+        completedTasks: completedCount,
+        pendingTasks: totalTasks - completedCount,
+        hoursWorked: totalHours
+      })
+      
+      setDailySummary(dailyBreakdown)
+      setCompletedTasks(allCompletedTasks)
+      // Auto-select all completed tasks
+      setSelectedTasks(allCompletedTasks.map(t => t.id))
+      
       setLoading(false)
       setError(null)
     } catch (err) {
@@ -66,10 +132,25 @@ function WeeklySubmission() {
     try {
       setIsSubmitting(true)
       const today = new Date()
+      
+      // Prepare tasks from selected completed tasks
+      const tasksToInclude = completedTasks
+        .filter(task => selectedTasks.includes(task.id))
+        .map(task => ({
+          description: task.description,
+          priority: task.priority,
+          duration: task.duration,
+          status: 'completed'
+        }))
+      
+      // Combine notes
+      const notes = `${summary}\n\nChallenges: ${challenges}\n\nNext Week: ${nextWeekPlan}`
+      
       await reportAPI.create({
         type: 'weekly',
         date: today.toISOString(),
-        notes: summary,
+        tasks: tasksToInclude,
+        notes: notes.trim(),
         status: 'submitted',
         submittedAt: new Date()
       })
@@ -248,6 +329,83 @@ function WeeklySubmission() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Completed Tasks Section */}
+        <div className="panel-raised animate-slide-up" style={{ marginBottom: '32px', animationDelay: '0.1s' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ 
+              fontFamily: 'var(--font-display)', 
+              fontSize: '1.25rem', 
+              margin: 0
+            }}>
+              ✅ Completed Tasks This Week ({selectedTasks.length}/{completedTasks.length} selected)
+            </h2>
+            <div className="action-buttons" style={{ gap: '8px' }}>
+              <button 
+                type="button"
+                className="btn-skeu btn-secondary"
+                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                onClick={() => setSelectedTasks(completedTasks.map(t => t.id))}
+              >
+                Select All
+              </button>
+              <button 
+                type="button"
+                className="btn-skeu btn-secondary"
+                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                onClick={() => setSelectedTasks([])}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+          
+          {completedTasks.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {completedTasks.map((task) => (
+                <div 
+                  key={task.id}
+                  className="card-paper"
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '16px',
+                    padding: '12px 16px',
+                    opacity: selectedTasks.includes(task.id) ? 1 : 0.5
+                  }}
+                >
+                  <label className="checkbox-skeu" style={{ marginTop: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedTasks.includes(task.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTasks([...selectedTasks, task.id])
+                        } else {
+                          setSelectedTasks(selectedTasks.filter(id => id !== task.id))
+                        }
+                      }}
+                    />
+                    <span className="checkmark"></span>
+                  </label>
+                  
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 500, color: '#3d2b1f', marginBottom: '4px' }}>
+                      {task.description}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#8a7a6a' }}>
+                      📅 {task.date} • ⏱️ {task.duration}h • 🔥 {task.priority}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="panel-inset" style={{ textAlign: 'center', padding: '40px' }}>
+              <p style={{ margin: 0, opacity: 0.7 }}>No completed tasks this week. Complete some tasks to include them in your report.</p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
