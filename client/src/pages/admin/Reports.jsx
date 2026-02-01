@@ -96,7 +96,8 @@ function AdminReports() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'approved': return 'completed'
-      case 'revision': return 'overdue'
+      case 'rejected': return 'overdue'
+      case 'submitted': return 'pending'
       default: return 'pending'
     }
   }
@@ -129,9 +130,9 @@ function AdminReports() {
                 onChange={(e) => setSelectedStatus(e.target.value)}
               >
                 <option value="all">All Statuses</option>
-                <option value="pending">Pending Review</option>
+                <option value="submitted">Pending Review</option>
                 <option value="approved">Approved</option>
-                <option value="revision">Needs Revision</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
             
