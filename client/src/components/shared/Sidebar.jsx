@@ -1,15 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useState } from 'react'
 import './Sidebar.css'
+
+// Constants
+const MOBILE_BREAKPOINT = 768
 
 function Sidebar({ type = 'employee' }) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
 
   const employeeLinks = [
     { path: '/employee/dashboard', icon: '🏠', label: 'Dashboard' },
     { path: '/employee/tasks', icon: '📝', label: 'Daily Tasks' },
     { path: '/employee/drafts', icon: '💾', label: 'Draft Reports' },
+    { path: '/employee/submitted', icon: '📋', label: 'My Reports' },
     { path: '/employee/submit', icon: '📤', label: 'Submit Report' },
   ]
 
@@ -27,8 +33,28 @@ function Sidebar({ type = 'employee' }) {
     navigate('/login')
   }
 
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+      setIsOpen(false)
+    }
+  }
+
   return (
-    <aside className="sidebar texture-wood">
+    <>
+      {/* Mobile Menu Toggle Button */}
+      <button 
+        className="mobile-menu-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle menu"
+      >
+        <span className="menu-icon">{isOpen ? '✕' : '☰'}</span>
+      </button>
+
+      {/* Mobile Overlay */}
+      {isOpen && <div className="mobile-overlay" onClick={() => setIsOpen(false)} />}
+
+      <aside className={`sidebar texture-wood ${isOpen ? 'open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">
@@ -50,6 +76,7 @@ function Sidebar({ type = 'employee' }) {
                 <NavLink 
                   to={link.path} 
                   className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  onClick={handleLinkClick}
                 >
                   <span className="nav-icon">{link.icon}</span>
                   <span className="nav-label">{link.label}</span>
@@ -89,6 +116,7 @@ function Sidebar({ type = 'employee' }) {
         <span>Sign Out</span>
       </button>
     </aside>
+    </>
   )
 }
 
