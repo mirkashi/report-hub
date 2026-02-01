@@ -60,8 +60,14 @@ export const getReports = async (req, res, next) => {
     // If not admin, only show own reports
     if (req.user.role !== 'admin') {
       query.user = req.user.id;
-    } else if (userId) {
-      query.user = userId;
+    } else {
+      // Admin should only see submitted/approved/rejected reports, not drafts
+      if (!status) {
+        query.status = { $ne: 'draft' };
+      }
+      if (userId) {
+        query.user = userId;
+      }
     }
 
     if (type) {

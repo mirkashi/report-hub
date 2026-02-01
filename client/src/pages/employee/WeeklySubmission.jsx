@@ -23,7 +23,6 @@ function WeeklySubmission() {
   const [dailySummary, setDailySummary] = useState([])
   const [completedTasks, setCompletedTasks] = useState([])
   const [selectedTasks, setSelectedTasks] = useState([])
-  // eslint-disable-next-line no-unused-vars
   const [attachedFiles, setAttachedFiles] = useState([])
   const [showPreview, setShowPreview] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
@@ -143,6 +142,22 @@ function WeeklySubmission() {
     }
   }
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files)
+    const fileData = files.map(file => ({
+      originalName: file.name,
+      filename: file.name,
+      size: file.size, // Store size in bytes
+      mimetype: file.type,
+      type: file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : 'document'
+    }))
+    setAttachedFiles(prev => [...prev, ...fileData])
+  }
+
+  const handleRemoveFile = (index) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
   const prepareReportData = (status) => {
     const today = new Date()
     
@@ -164,6 +179,12 @@ function WeeklySubmission() {
       date: today.toISOString(),
       tasks: tasksToInclude,
       notes: notes.trim(),
+      attachments: attachedFiles.map(file => ({
+        filename: file.filename,
+        originalName: file.originalName,
+        size: file.size, // Already in bytes
+        mimetype: file.mimetype
+      })),
       status
     }
 
@@ -772,6 +793,7 @@ function WeeklySubmission() {
                 <input 
                   type="file" 
                   multiple 
+                  onChange={handleFileChange}
                   style={{ 
                     position: 'absolute', 
                     inset: 0, 
@@ -799,13 +821,16 @@ function WeeklySubmission() {
                       {file.type === 'pdf' ? '📄' : file.type === 'image' ? '🖼️' : '📝'}
                     </span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500, color: '#3d2b1f' }}>{file.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#8a7a6a' }}>{file.size}</div>
+                      <div style={{ fontWeight: 500, color: '#3d2b1f' }}>{file.originalName}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#8a7a6a' }}>
+                        {(file.size / 1024).toFixed(2)} KB
+                      </div>
                     </div>
                     <button 
                       type="button"
                       className="btn-skeu btn-danger"
                       style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                      onClick={() => handleRemoveFile(index)}
                     >
                       🗑️
                     </button>

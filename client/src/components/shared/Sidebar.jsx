@@ -90,10 +90,14 @@ function Sidebar({ type = 'employee' }) {
           <span className="nav-section-title">Quick Links</span>
           <ul className="nav-list">
             <li>
-              <a href="#" className="nav-link">
+              <NavLink 
+                to={type === 'admin' ? '/admin/settings' : '/employee/settings'} 
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={handleLinkClick}
+              >
                 <span className="nav-icon">⚙️</span>
                 <span className="nav-label">Settings</span>
-              </a>
+              </NavLink>
             </li>
           </ul>
         </div>
