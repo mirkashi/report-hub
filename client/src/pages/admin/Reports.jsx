@@ -59,6 +59,12 @@ function AdminReports() {
     }
   }
 
+  const calculateCompletionRate = (report) => {
+    return report.totalTasks > 0 
+      ? Math.round((report.tasksCompleted / report.totalTasks) * 100) 
+      : 0
+  }
+
   return (
     <div className="app-layout">
       <Sidebar type="admin" />
@@ -298,7 +304,7 @@ function AdminReports() {
                       color: selectedReport.tasksCompleted === selectedReport.totalTasks ? '#38a169' : '#ecc94b',
                       marginBottom: '8px'
                     }}>
-                      {selectedReport.totalTasks > 0 ? Math.round((selectedReport.tasksCompleted / selectedReport.totalTasks) * 100) : 0}%
+                      {calculateCompletionRate(selectedReport)}%
                     </div>
                     <div style={{ fontSize: '0.85rem', opacity: 0.7, fontWeight: 600 }}>Completion Rate</div>
                   </div>
@@ -377,7 +383,7 @@ function AdminReports() {
                         <div 
                           className="progress-fill" 
                           style={{ 
-                            width: `${selectedReport.totalTasks > 0 ? (selectedReport.tasksCompleted / selectedReport.totalTasks) * 100 : 0}%`,
+                            width: `${calculateCompletionRate(selectedReport)}%`,
                             background: selectedReport.tasksCompleted === selectedReport.totalTasks 
                               ? 'linear-gradient(90deg, #38a169, #48bb78)' 
                               : 'linear-gradient(90deg, #ecc94b, #f6e05e)'

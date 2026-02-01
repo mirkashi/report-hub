@@ -18,6 +18,9 @@ function EmployeeDashboard() {
   const [weeklyReports, setWeeklyReports] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // Constants
+  const MAX_TASKS_TO_FETCH = 10
+
   useEffect(() => {
     fetchDashboardData()
   }, [])
@@ -40,7 +43,7 @@ function EmployeeDashboard() {
       }
 
       // Fetch recent reports for recent tasks
-      const reportsResponse = await reportAPI.getAllReports({ limit: 10, type: 'daily' })
+      const reportsResponse = await reportAPI.getAllReports({ limit: MAX_TASKS_TO_FETCH, type: 'daily' })
       if (reportsResponse.data?.success && reportsResponse.data.reports) {
         const allTasks = []
         const allPendingTasks = []

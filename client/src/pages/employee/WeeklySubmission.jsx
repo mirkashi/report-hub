@@ -133,29 +133,7 @@ function WeeklySubmission() {
 
     try {
       setIsSubmitting(true)
-      const today = new Date()
-      
-      // Prepare tasks from selected completed tasks - Include ALL task details
-      const tasksToInclude = completedTasks
-        .filter(task => selectedTasks.includes(task.id))
-        .map(task => ({
-          description: task.description,
-          priority: task.priority,
-          duration: task.duration,
-          status: 'completed'
-        }))
-      
-      // Combine notes with clear sections
-      const notes = `Weekly Summary:\n${summary}\n\nChallenges & Blockers:\n${challenges || 'None reported'}\n\nNext Week's Plan:\n${nextWeekPlan || 'To be determined'}`
-      
-      await reportAPI.create({
-        type: 'weekly',
-        date: today.toISOString(),
-        tasks: tasksToInclude,
-        notes: notes.trim(),
-        status: 'submitted',
-        submittedAt: new Date()
-      })
+      await submitReport('submitted')
       setIsSubmitting(false)
       setShowSuccess(true)
     } catch (err) {
@@ -165,31 +143,45 @@ function WeeklySubmission() {
     }
   }
 
+  const prepareReportData = (status) => {
+    const today = new Date()
+    
+    // Prepare tasks from selected completed tasks - Include ALL task details
+    const tasksToInclude = completedTasks
+      .filter(task => selectedTasks.includes(task.id))
+      .map(task => ({
+        description: task.description,
+        priority: task.priority,
+        duration: task.duration,
+        status: 'completed'
+      }))
+    
+    // Combine notes with clear sections
+    const notes = `Weekly Summary:\n${summary}\n\nChallenges & Blockers:\n${challenges || 'None reported'}\n\nNext Week's Plan:\n${nextWeekPlan || 'To be determined'}`
+    
+    const reportData = {
+      type: 'weekly',
+      date: today.toISOString(),
+      tasks: tasksToInclude,
+      notes: notes.trim(),
+      status
+    }
+
+    if (status === 'submitted') {
+      reportData.submittedAt = new Date()
+    }
+
+    return reportData
+  }
+
+  const submitReport = async (status) => {
+    const reportData = prepareReportData(status)
+    await reportAPI.create(reportData)
+  }
+
   const handleSaveDraft = async () => {
     try {
-      const today = new Date()
-      
-      // Prepare tasks from selected completed tasks
-      const tasksToInclude = completedTasks
-        .filter(task => selectedTasks.includes(task.id))
-        .map(task => ({
-          description: task.description,
-          priority: task.priority,
-          duration: task.duration,
-          status: 'completed'
-        }))
-      
-      // Combine notes
-      const notes = `Weekly Summary:\n${summary}\n\nChallenges & Blockers:\n${challenges || 'None reported'}\n\nNext Week's Plan:\n${nextWeekPlan || 'To be determined'}`
-      
-      await reportAPI.create({
-        type: 'weekly',
-        date: today.toISOString(),
-        tasks: tasksToInclude,
-        notes: notes.trim(),
-        status: 'draft'
-      })
-      
+      await submitReport('draft')
       setDraftSaved(true)
       setTimeout(() => setDraftSaved(false), 3000)
     } catch (err) {
