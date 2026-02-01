@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Notification from '../components/Notification'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ function Register() {
   })
   const [error, setError] = useState('')
   const [validationError, setValidationError] = useState('')
+  const [showNotification, setShowNotification] = useState(false)
   const { register, isLoading } = useAuth()
   const navigate = useNavigate()
 
@@ -40,14 +42,32 @@ function Register() {
     const result = await register(formData)
     
     if (result.success) {
-      navigate('/employee/dashboard')
+      // Show success notification
+      setShowNotification(true)
     } else {
       setError(result.error)
     }
   }
 
+  const handleNotificationClose = () => {
+    setShowNotification(false)
+    // Navigate to login page after notification closes
+    setTimeout(() => {
+      navigate('/login')
+    }, 300)
+  }
+
   return (
     <div className="auth-layout">
+      {showNotification && (
+        <Notification
+          type="success"
+          title="Account Created Successfully!"
+          message="Your account has been created. Please log in to continue."
+          onClose={handleNotificationClose}
+          duration={4000}
+        />
+      )}
       <div className="auth-container animate-slide-up" style={{ maxWidth: '560px' }}>
         {/* Logo Section */}
         <div className="logo-container">
