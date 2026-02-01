@@ -150,10 +150,12 @@ function DailyTaskInput() {
         const updatedTasks = [...(existingReport.tasks || []), newTaskData]
         await reportAPI.updateReport(existingReport._id, { tasks: updatedTasks })
       } else {
-        // Create new report - use date string to avoid timezone issues
+        // Create new report - use date string with UTC noon to avoid timezone date shifts
+        // Setting time to 12:00 UTC ensures the date stays consistent across timezones
+        // Example: 2024-01-15T12:00:00.000Z will be Jan 15 in UTC-12 through UTC+12
         const taskData = {
           type: 'daily',
-          date: `${dateStr}T12:00:00.000Z`, // Set to noon UTC to avoid date shifts
+          date: `${dateStr}T12:00:00.000Z`,
           tasks: [newTaskData]
         }
         await reportAPI.create(taskData)

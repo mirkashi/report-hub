@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+// Reusable attachment schema for both tasks and reports
+const attachmentSchema = new mongoose.Schema({
+  filename: String,
+  originalName: String,
+  path: String,
+  size: Number,
+  mimetype: String,
+  uploadedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: false });
+
 const taskSchema = new mongoose.Schema({
   description: {
     type: String,
@@ -21,17 +34,7 @@ const taskSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium',
   },
-  attachments: [{
-    filename: String,
-    originalName: String,
-    path: String,
-    size: Number,
-    mimetype: String,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  attachments: [attachmentSchema],
   createdAt: {
     type: Date,
     default: Date.now
@@ -67,17 +70,7 @@ const reportSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, 'Notes cannot exceed 1000 characters'],
     },
-    attachments: [{
-      filename: String,
-      originalName: String,
-      path: String,
-      size: Number,
-      mimetype: String,
-      uploadedAt: {
-        type: Date,
-        default: Date.now
-      }
-    }],
+    attachments: [attachmentSchema],
     status: {
       type: String,
       enum: ['draft', 'submitted', 'approved', 'rejected'],
