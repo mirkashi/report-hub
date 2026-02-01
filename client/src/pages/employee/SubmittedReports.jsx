@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
 import { reportAPI } from '../../services/api'
 
+// Constants
+const DEFAULT_TASK_DURATION = 1
+
 function SubmittedReports() {
   const navigate = useNavigate()
   const [reports, setReports] = useState([])
@@ -389,7 +392,7 @@ function SubmittedReports() {
                                   </span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', opacity: 0.8 }}>
-                                  <span>⏱️ {task.duration || 1}h</span>
+                                  <span>⏱️ {task.duration || DEFAULT_TASK_DURATION}h</span>
                                   <span>🎯 {task.priority || 'medium'} priority</span>
                                 </div>
                               </div>

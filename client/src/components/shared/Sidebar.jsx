@@ -3,6 +3,9 @@ import { useAuth } from '../../context/AuthContext'
 import { useState } from 'react'
 import './Sidebar.css'
 
+// Constants
+const MOBILE_BREAKPOINT = 768
+
 function Sidebar({ type = 'employee' }) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
@@ -32,7 +35,7 @@ function Sidebar({ type = 'employee' }) {
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when a link is clicked
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
       setIsOpen(false)
     }
   }
