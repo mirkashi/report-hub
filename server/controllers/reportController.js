@@ -255,7 +255,7 @@ export const reviewReport = async (req, res, next) => {
       return next(new AppError('Invalid review status', 400));
     }
 
-    const report = await Report.findById(req.params.id);
+    const report = await Report.findById(req.params.id).populate('user', 'name email');
 
     if (!report) {
       return next(new AppError('Report not found', 404));
@@ -271,6 +271,16 @@ export const reviewReport = async (req, res, next) => {
     report.reviewNotes = reviewNotes;
 
     await report.save();
+
+    // Create notification for the user
+    const Notification = (await import('../models/Notification.js')).default;
+    await Notification.create({
+      user: report.user._id,
+      type: status === 'approved' ? 'report_approved' : 'report_rejected',
+      title: `Report ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+      message: `Your report for ${new Date(report.date).toLocaleDateString()} has been ${status}.${reviewNotes ? ` Feedback: ${reviewNotes}` : ''}`,
+      relatedReport: report._id,
+    });
 
     res.status(200).json({
       success: true,

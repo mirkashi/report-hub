@@ -21,6 +21,21 @@ const taskSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium',
   },
+  attachments: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number,
+    mimetype: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 const reportSchema = new mongoose.Schema(
@@ -52,6 +67,17 @@ const reportSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, 'Notes cannot exceed 1000 characters'],
     },
+    attachments: [{
+      filename: String,
+      originalName: String,
+      path: String,
+      size: Number,
+      mimetype: String,
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
     status: {
       type: String,
       enum: ['draft', 'submitted', 'approved', 'rejected'],

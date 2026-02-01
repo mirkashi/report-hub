@@ -9,6 +9,7 @@ function Sidebar({ type = 'employee' }) {
   const employeeLinks = [
     { path: '/employee/dashboard', icon: '🏠', label: 'Dashboard' },
     { path: '/employee/tasks', icon: '📝', label: 'Daily Tasks' },
+    { path: '/employee/drafts', icon: '💾', label: 'Draft Reports' },
     { path: '/employee/submit', icon: '📤', label: 'Submit Report' },
   ]
 

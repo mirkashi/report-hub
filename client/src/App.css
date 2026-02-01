@@ -15,19 +15,25 @@
 }
 
 .sidebar {
-  width: 280px;
+  width: 80px; /* Collapsed width */
   min-height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 100;
+  transition: width 0.3s ease;
+}
+
+.sidebar:hover {
+  width: 280px; /* Expanded width on hover */
 }
 
 .main-content {
   flex: 1;
-  margin-left: 280px;
+  margin-left: 80px; /* Match collapsed sidebar width */
   min-height: 100vh;
   padding: 32px;
+  transition: margin-left 0.3s ease;
 }
 
 /* Auth Layout */

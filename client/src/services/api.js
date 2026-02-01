@@ -153,4 +153,21 @@ export const announcementAPI = {
     api.put(`/announcements/${id}/read`),
 };
 
+export const notificationAPI = {
+  getAll: (params) => 
+    dedupedGet('/notifications', { params }),
+  
+  getNotifications: (params) => 
+    dedupedGet('/notifications', { params }),
+  
+  markAsRead: (id) => 
+    api.put(`/notifications/${id}/read`),
+  
+  markAllAsRead: () => 
+    api.put('/notifications/mark-all-read'),
+  
+  deleteNotification: (id) => 
+    api.delete(`/notifications/${id}`),
+};
+
 export default api;
