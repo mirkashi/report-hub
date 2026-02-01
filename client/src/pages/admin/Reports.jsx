@@ -9,6 +9,9 @@ function AdminReports() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reviewNotes, setReviewNotes] = useState('')
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewAction, setReviewAction] = useState('')
 
   useEffect(() => {
     fetchReports()
@@ -29,10 +32,14 @@ function AdminReports() {
         status: report.status || 'draft',
         tasksCompleted: report.tasks?.filter(t => t.status === 'completed').length || 0,
         totalTasks: report.tasks?.length || 0,
+        tasks: report.tasks || [],
         hoursWorked: report.tasks?.reduce((sum, t) => sum + (t.duration || 0), 0) || 0,
         submittedAt: report.submittedAt ? new Date(report.submittedAt).toLocaleDateString() : 'Not submitted',
         summary: report.notes || report.tasks?.map(t => t.description).join('; ') || '',
-        attachments: report.attachments || []
+        attachments: report.attachments || [],
+        reviewNotes: report.reviewNotes || '',
+        reviewedBy: report.reviewedBy?.name || '',
+        reviewedAt: report.reviewedAt ? new Date(report.reviewedAt).toLocaleDateString() : ''
       }))
       setReports(formattedReports)
       setError(null)
@@ -42,6 +49,41 @@ function AdminReports() {
       setReports([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleReviewAction = (action) => {
+    setReviewAction(action)
+    setShowReviewModal(true)
+  }
+
+  const handleSubmitReview = async () => {
+    if (!selectedReport) return
+    
+    try {
+      await reportAPI.reviewReport(selectedReport.id, {
+        status: reviewAction,
+        reviewNotes
+      })
+      
+      // Refresh reports and close modal
+      await fetchReports()
+      setShowReviewModal(false)
+      setReviewNotes('')
+      setReviewAction('')
+      
+      // Update selected report
+      const updatedReport = reports.find(r => r.id === selectedReport.id)
+      if (updatedReport) {
+        setSelectedReport({
+          ...updatedReport,
+          status: reviewAction,
+          reviewNotes
+        })
+      }
+    } catch (err) {
+      console.error('Error reviewing report:', err)
+      alert('Failed to submit review')
     }
   }
 
@@ -394,6 +436,64 @@ function AdminReports() {
                   </div>
                 )}
 
+                {/* Tasks Details */}
+                {selectedReport.tasks && selectedReport.tasks.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ 
+                      margin: '0 0 16px 0', 
+                      fontSize: '1.1rem',
+                      fontFamily: 'var(--font-display)',
+                      color: '#f0c420',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>📋</span> Task Details
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {selectedReport.tasks.map((task, index) => (
+                        <div 
+                          key={index}
+                          className="panel-inset"
+                          style={{ 
+                            padding: '16px',
+                            background: 'linear-gradient(145deg, #2d1b0f 0%, #3d2b1f 100%)',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid rgba(212, 160, 23, 0.2)'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <h4 style={{ margin: 0, color: '#f0c420' }}>
+                              {task.description}
+                            </h4>
+                            <span className={`task-status status-${task.status === 'completed' ? 'completed' : 'pending'}`}>
+                              {task.status}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', opacity: 0.8 }}>
+                            <span>⏱️ {task.duration || 1}h</span>
+                            <span>🎯 {task.priority || 'medium'} priority</span>
+                          </div>
+                          {task.attachments && task.attachments.length > 0 && (
+                            <div style={{ marginTop: '12px' }}>
+                              <div style={{ fontSize: '0.85rem', marginBottom: '8px', opacity: 0.7 }}>
+                                📎 Attachments:
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {task.attachments.map((file, idx) => (
+                                  <div key={idx} className="file-clip" style={{ fontSize: '0.8rem' }}>
+                                    {file.originalName || file.filename || file}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Attachments */}
                 {selectedReport.attachments && selectedReport.attachments.length > 0 && (
                   <div style={{ marginBottom: '24px' }}>
@@ -421,6 +521,44 @@ function AdminReports() {
                   </div>
                 )}
 
+                {/* Review Feedback */}
+                {selectedReport.reviewNotes && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ 
+                      margin: '0 0 12px 0', 
+                      fontSize: '1.1rem',
+                      fontFamily: 'var(--font-display)',
+                      color: '#f0c420',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>💬</span> Admin Review
+                    </h3>
+                    <div className="panel-inset" style={{ 
+                      padding: '20px',
+                      background: 'linear-gradient(180deg, #fdfbf7 0%, #f8f4eb 100%)',
+                      borderRadius: 'var(--radius-md)',
+                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <p style={{ 
+                        margin: '0 0 12px 0', 
+                        lineHeight: 1.8, 
+                        color: '#2d2d2d',
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'var(--font-body)'
+                      }}>
+                        {selectedReport.reviewNotes}
+                      </p>
+                      {selectedReport.reviewedBy && (
+                        <p style={{ fontSize: '0.85rem', color: '#8a7a6a', margin: 0 }}>
+                          — {selectedReport.reviewedBy} on {selectedReport.reviewedAt}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Metadata */}
                 <div style={{ 
                   padding: '16px',
@@ -440,13 +578,19 @@ function AdminReports() {
                   paddingTop: '20px'
                 }}>
                   <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
-                    {selectedReport.status === 'pending' && (
+                    {(selectedReport.status === 'pending' || selectedReport.status === 'submitted') && (
                       <>
-                        <button className="btn-skeu btn-danger">
+                        <button 
+                          className="btn-skeu btn-danger"
+                          onClick={() => handleReviewAction('rejected')}
+                        >
                           <span>↩️</span>
-                          <span>Request Revision</span>
+                          <span>Reject Report</span>
                         </button>
-                        <button className="btn-skeu btn-success">
+                        <button 
+                          className="btn-skeu btn-success"
+                          onClick={() => handleReviewAction('approved')}
+                        >
                           <span>✓</span>
                           <span>Approve Report</span>
                         </button>
@@ -458,7 +602,7 @@ function AdminReports() {
                         <span>Download Report</span>
                       </button>
                     )}
-                    {selectedReport.status === 'revision' && (
+                    {selectedReport.status === 'rejected' && (
                       <button className="btn-skeu btn-primary">
                         <span>📧</span>
                         <span>Send Reminder</span>
@@ -483,6 +627,86 @@ function AdminReports() {
           </div>
         </div>
           </>
+        )}
+        
+        {/* Review Modal */}
+        {showReviewModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div className="panel-raised" style={{
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}>
+              <h2 style={{ 
+                fontFamily: 'var(--font-display)', 
+                fontSize: '1.5rem', 
+                margin: '0 0 20px 0'
+              }}>
+                {reviewAction === 'approved' ? '✅ Approve Report' : '❌ Reject Report'}
+              </h2>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ margin: '0 0 16px 0' }}>
+                  You are about to {reviewAction === 'approved' ? 'approve' : 'reject'} the report from{' '}
+                  <strong>{selectedReport?.employee}</strong>.
+                </p>
+                
+                <div className="form-group">
+                  <label className="form-label">
+                    {reviewAction === 'approved' ? 'Feedback (Optional)' : 'Reason for Rejection *'}
+                  </label>
+                  <textarea
+                    className="input-skeu"
+                    rows={6}
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder={
+                      reviewAction === 'approved' 
+                        ? 'Add any feedback or comments...' 
+                        : 'Please provide a reason for rejection...'
+                    }
+                    required={reviewAction === 'rejected'}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+              
+              <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                <button 
+                  className="btn-skeu btn-secondary"
+                  onClick={() => {
+                    setShowReviewModal(false)
+                    setReviewNotes('')
+                    setReviewAction('')
+                  }}
+                >
+                  <span>✕</span>
+                  <span>Cancel</span>
+                </button>
+                <button 
+                  className={`btn-skeu ${reviewAction === 'approved' ? 'btn-success' : 'btn-danger'}`}
+                  onClick={handleSubmitReview}
+                  disabled={reviewAction === 'rejected' && !reviewNotes.trim()}
+                  title={reviewAction === 'rejected' && !reviewNotes.trim() ? 'Please provide a reason for rejection' : ''}
+                >
+                  <span>{reviewAction === 'approved' ? '✓' : '↩️'}</span>
+                  <span>Confirm {reviewAction === 'approved' ? 'Approval' : 'Rejection'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

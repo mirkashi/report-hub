@@ -3,7 +3,15 @@ import Sidebar from '../../components/shared/Sidebar'
 import { reportAPI } from '../../services/api'
 
 function DailyTaskInput() {
-  const [selectedDay, setSelectedDay] = useState(4) // Friday
+  // Initialize selectedDay to today's day of week
+  const getTodayIndex = () => {
+    const today = new Date()
+    const dayOfWeek = today.getDay()
+    // Convert Sunday (0) to 6, Monday (1) to 0, etc.
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  }
+  
+  const [selectedDay, setSelectedDay] = useState(getTodayIndex())
   const [tasks, setTasks] = useState([])
   const [reportId, setReportId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -13,22 +21,48 @@ function DailyTaskInput() {
     priority: 'medium',
     duration: 1
   })
+  
+  // Generate week days dynamically based on current week
+  const getWeekDays = () => {
+    const today = new Date()
+    const monday = new Date(today)
+    // Handle Sunday (0) by treating it as 7
+    const dayOfWeek = today.getDay() || 7
+    monday.setDate(today.getDate() - dayOfWeek + 1) // Get Monday of current week
+    
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + i)
+      
+      days.push({
+        day: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: day.getDate().toString().padStart(2, '0'),
+        month: day.toLocaleDateString('en-US', { month: 'short' }),
+        fullDate: day // Store full date for comparison
+      })
+    }
+    return days
+  }
+
+  const weekDays = getWeekDays()
 
   useEffect(() => {
-    fetchTodaysTasks()
+    fetchTasksForDay()
   }, [selectedDay])
 
-  const fetchTodaysTasks = async () => {
+  const fetchTasksForDay = async () => {
     try {
       setLoading(true)
-      const today = new Date()
-      // Use local date to avoid timezone issues
-      const year = today.getFullYear()
-      const month = String(today.getMonth() + 1).padStart(2, '0')
-      const day = String(today.getDate()).padStart(2, '0')
-      const todayStr = `${year}-${month}-${day}`
       
-      const response = await reportAPI.getByDate(todayStr)
+      // Get the date for the selected day from weekDays
+      const selectedDate = weekDays[selectedDay].fullDate
+      const year = selectedDate.getFullYear()
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+      const day = String(selectedDate.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
+      
+      const response = await reportAPI.getByDate(dateStr)
       // API returns { data: { success: true, reports: [...] } }
       if (response.data && response.data.reports && response.data.reports.length > 0) {
         const report = response.data.reports[0]
@@ -41,6 +75,7 @@ function DailyTaskInput() {
             completed: task.status === 'completed',
             priority: task.priority,
             duration: task.duration || 1,
+            status: task.status,
             attachments: task.attachments || []
           })))
         } else {
@@ -58,16 +93,6 @@ function DailyTaskInput() {
       setLoading(false)
     }
   }
-
-  const weekDays = [
-    { day: 'Mon', date: '27', month: 'Jan' },
-    { day: 'Tue', date: '28', month: 'Jan' },
-    { day: 'Wed', date: '29', month: 'Jan' },
-    { day: 'Thu', date: '30', month: 'Jan' },
-    { day: 'Fri', date: '31', month: 'Jan' },
-    { day: 'Sat', date: '01', month: 'Feb' },
-    { day: 'Sun', date: '02', month: 'Feb' },
-  ]
 
   const toggleTask = async (id) => {
     if (!reportId) return
@@ -92,7 +117,7 @@ function DailyTaskInput() {
     } catch (err) {
       console.error('Error toggling task:', err)
       // Revert on error
-      await fetchTodaysTasks()
+      await fetchTasksForDay()
       
     }
   }
@@ -102,15 +127,15 @@ function DailyTaskInput() {
     if (!newTask.title.trim()) return
     
     try {
-      const today = new Date()
-      // Use local date to avoid timezone issues
-      const year = today.getFullYear()
-      const month = String(today.getMonth() + 1).padStart(2, '0')
-      const day = String(today.getDate()).padStart(2, '0')
-      const todayStr = `${year}-${month}-${day}`
+      // Get the date for the selected day
+      const selectedDate = weekDays[selectedDay].fullDate
+      const year = selectedDate.getFullYear()
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+      const day = String(selectedDate.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
       
-      // Check if a report exists for today
-      const response = await reportAPI.getByDate(todayStr)
+      // Check if a report exists for the selected day
+      const response = await reportAPI.getByDate(dateStr)
       const existingReport = response.data?.reports?.[0]
       
       const newTaskData = {
@@ -125,18 +150,19 @@ function DailyTaskInput() {
         const updatedTasks = [...(existingReport.tasks || []), newTaskData]
         await reportAPI.updateReport(existingReport._id, { tasks: updatedTasks })
       } else {
-        // Create new report with local date at noon to avoid timezone issues
-        const localDate = new Date(year, today.getMonth(), today.getDate(), 12, 0, 0)
+        // Create new report - use date string with UTC noon to avoid timezone date shifts
+        // Setting time to 12:00 UTC ensures the date stays consistent across timezones
+        // Example: 2024-01-15T12:00:00.000Z will be Jan 15 in UTC-12 through UTC+12
         const taskData = {
           type: 'daily',
-          date: localDate.toISOString(),
+          date: `${dateStr}T12:00:00.000Z`,
           tasks: [newTaskData]
         }
         await reportAPI.create(taskData)
       }
       
       // Refresh tasks from server
-      await fetchTodaysTasks()
+      await fetchTasksForDay()
       setNewTask({ title: '', description: '', priority: 'medium', duration: 1 })
     } catch (err) {
       console.error('Error adding task:', err)
