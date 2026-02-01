@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import '../styles/notification.css'
 
+const ENTRANCE_ANIMATION_DELAY = 10 // ms
+
 function Notification({ type = 'success', title, message, onClose, duration = 5000 }) {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
@@ -15,7 +17,7 @@ function Notification({ type = 'success', title, message, onClose, duration = 50
 
   useEffect(() => {
     // Trigger entrance animation
-    setTimeout(() => setIsVisible(true), 10)
+    setTimeout(() => setIsVisible(true), ENTRANCE_ANIMATION_DELAY)
 
     // Auto-close after duration
     if (duration > 0) {
