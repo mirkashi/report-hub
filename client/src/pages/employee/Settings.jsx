@@ -303,6 +303,8 @@ function EmployeeSettings() {
               type="button" 
               className="btn-skeu btn-primary"
               onClick={() => {
+                // TODO: Implement backend API endpoint for saving preferences
+                // For now, settings are shown but not persisted
                 setSuccess('Preferences saved successfully!')
                 setTimeout(() => setSuccess(''), 3000)
               }}

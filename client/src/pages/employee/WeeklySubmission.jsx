@@ -145,11 +145,11 @@ function WeeklySubmission() {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files)
     const fileData = files.map(file => ({
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(2)} KB`,
-      type: file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : 'document',
       originalName: file.name,
-      filename: file.name
+      filename: file.name,
+      size: file.size, // Store size in bytes
+      mimetype: file.type,
+      type: file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : 'document'
     }))
     setAttachedFiles(prev => [...prev, ...fileData])
   }
@@ -180,10 +180,10 @@ function WeeklySubmission() {
       tasks: tasksToInclude,
       notes: notes.trim(),
       attachments: attachedFiles.map(file => ({
-        filename: file.filename || file.name,
-        originalName: file.originalName || file.name,
-        size: typeof file.size === 'string' ? parseInt(file.size) : file.size,
-        mimetype: file.type
+        filename: file.filename,
+        originalName: file.originalName,
+        size: file.size, // Already in bytes
+        mimetype: file.mimetype
       })),
       status
     }
@@ -821,8 +821,10 @@ function WeeklySubmission() {
                       {file.type === 'pdf' ? '📄' : file.type === 'image' ? '🖼️' : '📝'}
                     </span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500, color: '#3d2b1f' }}>{file.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#8a7a6a' }}>{file.size}</div>
+                      <div style={{ fontWeight: 500, color: '#3d2b1f' }}>{file.originalName}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#8a7a6a' }}>
+                        {(file.size / 1024).toFixed(2)} KB
+                      </div>
                     </div>
                     <button 
                       type="button"

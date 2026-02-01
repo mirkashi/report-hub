@@ -301,10 +301,10 @@ function AdminSettings() {
 
             <div className="form-group">
               <label className="form-label">Data Retention</label>
-              <select className="input-skeu">
+              <select className="input-skeu" defaultValue="90">
                 <option value="30">30 days</option>
                 <option value="60">60 days</option>
-                <option value="90" selected>90 days</option>
+                <option value="90">90 days</option>
                 <option value="180">180 days</option>
                 <option value="365">1 year</option>
                 <option value="-1">Keep forever</option>
@@ -318,6 +318,8 @@ function AdminSettings() {
               type="button" 
               className="btn-skeu btn-primary"
               onClick={() => {
+                // TODO: Implement backend API endpoint for saving system settings
+                // For now, settings are shown but not persisted
                 setSuccess('System settings saved successfully!')
                 setTimeout(() => setSuccess(''), 3000)
               }}
