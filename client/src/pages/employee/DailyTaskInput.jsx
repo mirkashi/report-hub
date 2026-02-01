@@ -7,7 +7,6 @@ function DailyTaskInput() {
   const [tasks, setTasks] = useState([])
   const [reportId, setReportId] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -51,12 +50,10 @@ function DailyTaskInput() {
         setReportId(null)
         setTasks([])
       }
-      setError(null)
     } catch (err) {
       console.error('Error fetching tasks:', err)
       setReportId(null)
       setTasks([])
-      setError(null) // Don't show error for missing report
     } finally {
       setLoading(false)
     }
@@ -96,7 +93,7 @@ function DailyTaskInput() {
       console.error('Error toggling task:', err)
       // Revert on error
       await fetchTodaysTasks()
-      setError('Failed to update task status')
+      
     }
   }
 
@@ -143,7 +140,7 @@ function DailyTaskInput() {
       setNewTask({ title: '', description: '', priority: 'medium', duration: 1 })
     } catch (err) {
       console.error('Error adding task:', err)
-      setError('Failed to add task')
+      
     }
   }
 
@@ -153,7 +150,7 @@ function DailyTaskInput() {
       setTasks(tasks.filter(task => task.id !== id))
     } catch (err) {
       console.error('Error deleting task:', err)
-      setError('Failed to delete task')
+      
     }
   }
 

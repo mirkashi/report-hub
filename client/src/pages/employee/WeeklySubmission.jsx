@@ -23,6 +23,7 @@ function WeeklySubmission() {
   const [dailySummary, setDailySummary] = useState([])
   const [completedTasks, setCompletedTasks] = useState([])
   const [selectedTasks, setSelectedTasks] = useState([])
+  // eslint-disable-next-line no-unused-vars
   const [attachedFiles, setAttachedFiles] = useState([])
 
   useEffect(() => {
