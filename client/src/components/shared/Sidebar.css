@@ -300,10 +300,17 @@
     box-shadow: 
       8px 0 24px rgba(0, 0, 0, 0.5),
       inset -1px 0 0 rgba(255, 255, 255, 0.05);
+    /* Add top padding to make room for the close button when sidebar is open */
+    padding-top: 90px;
   }
   
   .sidebar.open {
     transform: translateX(0);
+  }
+  
+  /* Ensure logo doesn't overlap with close button */
+  .sidebar.open .sidebar-logo {
+    margin-top: -10px;
   }
 
   /* Show labels on mobile sidebar */

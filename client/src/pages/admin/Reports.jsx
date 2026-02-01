@@ -515,7 +515,7 @@ function AdminReports() {
                           key={index}
                           className="file-clip"
                         >
-                          {file}
+                          {typeof file === 'string' ? file : file.originalName || file.filename || 'Unknown file'}
                         </div>
                       ))}
                     </div>

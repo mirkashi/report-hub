@@ -143,6 +143,22 @@ function WeeklySubmission() {
     }
   }
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files)
+    const fileData = files.map(file => ({
+      name: file.name,
+      size: `${(file.size / 1024).toFixed(2)} KB`,
+      type: file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : 'document',
+      originalName: file.name,
+      filename: file.name
+    }))
+    setAttachedFiles(prev => [...prev, ...fileData])
+  }
+
+  const handleRemoveFile = (index) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
   const prepareReportData = (status) => {
     const today = new Date()
     
@@ -164,6 +180,12 @@ function WeeklySubmission() {
       date: today.toISOString(),
       tasks: tasksToInclude,
       notes: notes.trim(),
+      attachments: attachedFiles.map(file => ({
+        filename: file.filename || file.name,
+        originalName: file.originalName || file.name,
+        size: typeof file.size === 'string' ? parseInt(file.size) : file.size,
+        mimetype: file.type
+      })),
       status
     }
 
@@ -772,6 +794,7 @@ function WeeklySubmission() {
                 <input 
                   type="file" 
                   multiple 
+                  onChange={handleFileChange}
                   style={{ 
                     position: 'absolute', 
                     inset: 0, 
@@ -806,6 +829,7 @@ function WeeklySubmission() {
                       type="button"
                       className="btn-skeu btn-danger"
                       style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                      onClick={() => handleRemoveFile(index)}
                     >
                       🗑️
                     </button>

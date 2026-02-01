@@ -14,12 +14,14 @@ import DailyTaskInput from './pages/employee/DailyTaskInput'
 import WeeklySubmission from './pages/employee/WeeklySubmission'
 import DraftReports from './pages/employee/DraftReports'
 import SubmittedReports from './pages/employee/SubmittedReports'
+import EmployeeSettings from './pages/employee/Settings'
 
 // Admin Panel Pages
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminReports from './pages/admin/Reports'
 import AdminAnnouncements from './pages/admin/Announcements'
 import AdminEmployees from './pages/admin/Employees'
+import AdminSettings from './pages/admin/Settings'
 
 function App() {
   return (
@@ -37,12 +39,14 @@ function App() {
           <Route path="/employee/drafts" element={<ProtectedRoute requiredRole="employee"><DraftReports /></ProtectedRoute>} />
           <Route path="/employee/submitted" element={<ProtectedRoute requiredRole="employee"><SubmittedReports /></ProtectedRoute>} />
           <Route path="/employee/submit" element={<ProtectedRoute requiredRole="employee"><WeeklySubmission /></ProtectedRoute>} />
+          <Route path="/employee/settings" element={<ProtectedRoute requiredRole="employee"><EmployeeSettings /></ProtectedRoute>} />
           
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="admin"><AdminAnnouncements /></ProtectedRoute>} />
           <Route path="/admin/employees" element={<ProtectedRoute requiredRole="admin"><AdminEmployees /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><AdminSettings /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>
