@@ -72,7 +72,7 @@ function WeeklySubmission() {
         let dayCompleted = 0
         let dayHours = 0
         
-        reportTasks.forEach(task => {
+        reportTasks.forEach((task, taskIndex) => {
           totalTasks++
           dayHours += task.duration || 0
           
@@ -80,7 +80,7 @@ function WeeklySubmission() {
             completedCount++
             dayCompleted++
             allCompletedTasks.push({
-              id: task._id || `${report._id}-${task.description}`,
+              id: task._id || `${report._id}-task-${taskIndex}`,
               description: task.description,
               priority: task.priority || 'medium',
               duration: task.duration || 1,
