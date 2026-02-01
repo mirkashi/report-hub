@@ -13,6 +13,7 @@ import EmployeeDashboard from './pages/employee/Dashboard'
 import DailyTaskInput from './pages/employee/DailyTaskInput'
 import WeeklySubmission from './pages/employee/WeeklySubmission'
 import DraftReports from './pages/employee/DraftReports'
+import SubmittedReports from './pages/employee/SubmittedReports'
 
 // Admin Panel Pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/employee/dashboard" element={<ProtectedRoute requiredRole="employee"><EmployeeDashboard /></ProtectedRoute>} />
           <Route path="/employee/tasks" element={<ProtectedRoute requiredRole="employee"><DailyTaskInput /></ProtectedRoute>} />
           <Route path="/employee/drafts" element={<ProtectedRoute requiredRole="employee"><DraftReports /></ProtectedRoute>} />
+          <Route path="/employee/submitted" element={<ProtectedRoute requiredRole="employee"><SubmittedReports /></ProtectedRoute>} />
           <Route path="/employee/submit" element={<ProtectedRoute requiredRole="employee"><WeeklySubmission /></ProtectedRoute>} />
           
           {/* Admin Routes */}
