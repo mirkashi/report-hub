@@ -13,7 +13,8 @@
     "start": "cd server && npm start",
     "dev-client": "cd client && npm run dev",
     "dev-server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\""
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",
+    "vercel-build": "npm run build-client"
   },
   "keywords": [
     "report-hub",

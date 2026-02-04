@@ -1,6 +1,8 @@
 # ReportHub - Weekly Work Report Management System
 
-A professional, skeuomorphic UI/UX design for a weekly work report submission website. Built with React and ready for MERN stack implementation.
+A professional, full-stack MERN application for weekly work report submission with a skeuomorphic UI/UX design. Features employee task management and admin oversight capabilities.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/report-hub)
 
 ## 🎨 Design Philosophy
 
@@ -14,74 +16,199 @@ This project implements a **fully skeuomorphic design** with:
 ## 📱 Features
 
 ### Employee Panel
-- **Registration & Login**: Embossed input fields with realistic textures and shadowed buttons
-- **Daily Task Input**: Interactive cards with paper-like texture, realistic checkboxes, and file attachment buttons
-- **Weekly Submission**: Large 3D submit button with embossed effect and realistic animations
+- **Registration & Login**: Secure JWT-based authentication with embossed input fields
+- **Daily Task Input**: Interactive cards with paper-like texture, realistic checkboxes, and file attachments
+- **Weekly Submission**: Report submission with 3D submit button and realistic animations
 - **Dashboard Overview**: Skeuomorphic panels showing tasks with realistic shadows and depth
+- **Draft Reports**: Save and edit reports before submission
+- **Notifications**: Real-time updates for announcements and report status
 
 ### Admin Panel
-- **Dashboard**: High-detail skeuomorphic tables with buttons, sliders, and tabs
-- **Reports Management**: Interactive cards/panels for submitted reports with file thumbnails
-- **Announcements**: Rich-text message area styled like a real memo board/noticeboard
+- **Dashboard**: High-detail skeuomorphic tables with comprehensive employee metrics
+- **Reports Management**: Review, approve, or reject submitted reports with detailed filtering
+- **Employee Management**: Add, edit, and manage employee accounts
+- **Announcements**: Broadcast messages to all employees with priority levels
+- **Analytics**: Track submission rates, performance metrics, and trends
 
-## 🚀 Getting Started
+## 🚀 Deployment
+
+### Deploy to Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/report-hub)
+
+**Quick Start:**
+1. Click the "Deploy to Vercel" button above
+2. Follow the setup instructions in [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+3. Set up environment variables (see guide below)
+
+**Detailed Guide:** See [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md)
+
+### Required Environment Variables
+
+**Server (.env):**
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secure_random_secret
+JWT_EXPIRE=7d
+JWT_COOKIE_EXPIRE=7
+NODE_ENV=production
+CLIENT_URL=https://your-app.vercel.app
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+```
+
+**Client (.env.production):**
+```env
+VITE_API_URL=https://your-app.vercel.app/api
+```
+
+## 🔧 Local Development
 
 ### Prerequisites
 - Node.js (v18 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
+- MongoDB (local or MongoDB Atlas)
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
-git clone https://github.com/Next-GenDeveloper/report-hub.git
+git clone https://github.com/yourusername/report-hub.git
 cd report-hub
 ```
 
-2. Install dependencies:
+2. **Install all dependencies:**
 ```bash
-cd client
+npm run install-all
+```
+
+Or install separately:
+```bash
+# Install server dependencies
+cd server
+npm install
+
+# Install client dependencies
+cd ../client
 npm install
 ```
 
-3. Start the development server:
+3. **Set up environment variables:**
+
+**Server** - Create `server/.env`:
 ```bash
+cp server/.env.example server/.env
+# Edit server/.env with your values
+```
+
+**Client** - Already configured for development at `client/.env.development`
+
+4. **Start MongoDB** (if running locally)
+
+5. **Run the application:**
+```bash
+# From root directory - runs both server and client
+npm run dev
+
+# Or run separately:
+# Terminal 1 - Server
+cd server
+npm run dev
+
+# Terminal 2 - Client
+cd client
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+6. **Access the application:**
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:5000/api`
+- Health Check: `http://localhost:5000/api/health`
 
-## 🔐 Demo Credentials
+## 🔐 Authentication
 
-- **Employee Panel**: Use any email (e.g., `john@example.com`)
-- **Admin Panel**: Use an email containing "admin" (e.g., `admin@example.com`)
+### Default Admin Account
+Create an admin account by registering with an email containing "admin":
+- Email: `admin@company.com` (or any email with "admin")
+- Password: Your choice (minimum 8 characters)
+
+### Employee Account
+Register with any other email:
+- Email: `john.doe@company.com`
+- Password: Your choice (minimum 8 characters)
 
 ## 📂 Project Structure
 
 ```
-client/
-├── src/
-│   ├── components/
-│   │   ├── admin/          # Admin-specific components
-│   │   ├── employee/       # Employee-specific components
-│   │   └── shared/         # Shared components (Sidebar, etc.)
-│   ├── pages/
-│   │   ├── admin/          # Admin panel pages
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Reports.jsx
-│   │   │   └── Announcements.jsx
-│   │   ├── employee/       # Employee panel pages
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── DailyTaskInput.jsx
-│   │   │   └── WeeklySubmission.jsx
-│   │   ├── Login.jsx
-│   │   └── Register.jsx
-│   ├── styles/
-│   │   └── skeuomorphic.css  # Complete skeuomorphic design system
-│   ├── App.jsx
-│   ├── App.css
-│   └── main.jsx
-└── package.json
+report-hub/
+├── client/                    # React frontend
+│   ├── src/
+│   │   ├── components/        # Reusable components
+│   │   │   ├── Notification.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   └── shared/        # Sidebar, Footer
+│   │   ├── pages/
+│   │   │   ├── admin/         # Admin panel pages
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── Reports.jsx
+│   │   │   │   ├── Employees.jsx
+│   │   │   │   ├── Announcements.jsx
+│   │   │   │   └── Settings.jsx
+│   │   │   ├── employee/      # Employee panel pages
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── DailyTaskInput.jsx
+│   │   │   │   ├── WeeklySubmission.jsx
+│   │   │   │   ├── DraftReports.jsx
+│   │   │   │   ├── SubmittedReports.jsx
+│   │   │   │   └── Settings.jsx
+│   │   │   ├── Login.jsx
+│   │   │   └── Register.jsx
+│   │   ├── context/           # React Context
+│   │   │   └── AuthContext.jsx
+│   │   ├── services/          # API services
+│   │   │   └── api.js
+│   │   ├── styles/            # Global styles
+│   │   │   ├── skeuomorphic.css
+│   │   │   └── notification.css
+│   │   ├── config/            # Configuration
+│   │   │   └── api.config.js
+│   │   └── main.jsx
+│   ├── .env.development       # Dev environment vars
+│   ├── .env.production        # Prod environment vars
+│   └── package.json
+│
+├── server/                    # Express backend
+│   ├── config/
+│   │   └── database.js        # MongoDB connection
+│   ├── controllers/           # Route controllers
+│   │   ├── authController.js
+│   │   ├── userController.js
+│   │   ├── reportController.js
+│   │   ├── announcementController.js
+│   │   └── notificationController.js
+│   ├── models/                # Mongoose models
+│   │   ├── User.js
+│   │   ├── Report.js
+│   │   ├── Announcement.js
+│   │   └── Notification.js
+│   ├── routes/                # API routes
+│   ├── middleware/            # Custom middleware
+│   │   ├── auth.js
+│   │   ├── validation.js
+│   │   └── errorHandler.js
+│   ├── utils/                 # Utility functions
+│   ├── .env.example           # Environment template
+│   ├── server.js              # Entry point
+│   └── package.json
+│
+├── vercel.json                # Vercel configuration
+├── .vercelignore              # Vercel ignore file
+├── .gitignore                 # Git ignore file
+├── DEPLOYMENT_CHECKLIST.md    # Quick deploy guide
+├── VERCEL_DEPLOYMENT_GUIDE.md # Detailed deploy guide
+├── package.json               # Root package.json
+└── README.md                  # This file
 ```
 
 ## 🎯 Screens Included
@@ -97,10 +224,36 @@ client/
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 19 with Vite
+### Frontend
+- **Framework**: React 19
+- **Build Tool**: Vite 7
 - **Routing**: React Router v7
+- **HTTP Client**: Axios
 - **Styling**: Custom CSS with skeuomorphic design system
-- **Ready for**: MERN stack backend integration
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT (JSON Web Tokens) with bcrypt
+- **Validation**: express-validator
+- **Security**: Helmet, CORS, rate limiting, mongo-sanitize
+
+### DevOps
+- **Deployment**: Vercel
+- **Database Hosting**: MongoDB Atlas (recommended)
+- **Version Control**: Git
+
+## 🔒 Security Features
+
+- JWT-based authentication with secure HTTP-only cookies
+- Password hashing with bcryptjs
+- Input validation and sanitization
+- Rate limiting to prevent abuse
+- CORS configuration
+- Helmet security headers
+- MongoDB injection protection
+- XSS protection
 
 ## 📸 Design Elements
 
@@ -133,10 +286,90 @@ The design is fully responsive and maintains skeuomorphic depth across:
 - Tablet (768px - 1024px)
 - Mobile (320px - 768px)
 
+## 🧪 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout user
+- `GET /api/auth/me` - Get current user
+
+### Reports
+- `GET /api/reports` - Get all reports (admin) or user reports
+- `POST /api/reports` - Create new report
+- `GET /api/reports/:id` - Get specific report
+- `PUT /api/reports/:id` - Update report
+- `DELETE /api/reports/:id` - Delete report
+- `PATCH /api/reports/:id/status` - Update report status (admin)
+
+### Announcements
+- `GET /api/announcements` - Get all announcements
+- `POST /api/announcements` - Create announcement (admin)
+- `PUT /api/announcements/:id` - Update announcement (admin)
+- `DELETE /api/announcements/:id` - Delete announcement (admin)
+
+### Users (Admin)
+- `GET /api/users` - Get all users
+- `GET /api/users/:id` - Get specific user
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+
+### Notifications
+- `GET /api/notifications` - Get user notifications
+- `PATCH /api/notifications/:id/read` - Mark as read
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Cannot connect to MongoDB:**
+- Verify your `MONGODB_URI` in `.env`
+- Check MongoDB Atlas IP whitelist
+- Ensure MongoDB service is running (if local)
+
+**CORS errors:**
+- Verify `CLIENT_URL` matches your frontend URL
+- Check that credentials are included in API requests
+
+**Port already in use:**
+```bash
+# Windows
+netstat -ano | findstr :5000
+taskkill /PID <PID> /F
+
+# Linux/Mac
+lsof -ti:5000 | xargs kill
+```
+
+**Build fails on Vercel:**
+- Check build logs
+- Verify all dependencies are in `package.json`
+- Ensure Node version compatibility
+
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+For support, email support@reporthub.com or open an issue on GitHub.
+
+## 🙏 Acknowledgments
+
+- Skeuomorphic design inspired by classic iOS interfaces
+- Built with modern web technologies
+- Deployed on Vercel's edge network
+
+---
+
+Made with ❤️ for better workplace reporting
