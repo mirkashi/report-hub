@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import '../components/shared/Footer.css'
 
 function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -134,6 +135,21 @@ function Login() {
           </p>
         </div>
       </div>
+      
+      {/* Footer */}
+      <footer className="auth-footer">
+        <p>
+          This website was created by{' '}
+          <a 
+            href="https://kashifmir.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Kashif Mir
+          </a>
+        </p>
+      </footer>
     </div>
   )
 }

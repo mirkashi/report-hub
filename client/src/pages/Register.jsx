@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Notification from '../components/Notification'
+import '../components/shared/Footer.css'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -239,6 +240,21 @@ function Register() {
           </p>
         </div>
       </div>
+      
+      {/* Footer */}
+      <footer className="auth-footer">
+        <p>
+          This website was created by{' '}
+          <a 
+            href="https://kashifmir.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Kashif Mir
+          </a>
+        </p>
+      </footer>
     </div>
   )
 }

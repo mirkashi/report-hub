@@ -11,6 +11,7 @@
 /* Layout Components */
 .app-layout {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -31,8 +32,9 @@
 .main-content {
   flex: 1;
   margin-left: 80px; /* Match collapsed sidebar width */
-  min-height: 100vh;
+  min-height: calc(100vh - 61px); /* Account for footer */
   padding: 32px;
+  padding-bottom: 16px;
   transition: margin-left 0.3s ease;
 }
 

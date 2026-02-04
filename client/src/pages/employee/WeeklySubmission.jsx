@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { reportAPI } from '../../services/api'
 
 function WeeklySubmission() {
@@ -909,6 +910,7 @@ function WeeklySubmission() {
         </>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

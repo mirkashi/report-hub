@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { useAuth } from '../../context/AuthContext'
 import { reportAPI, userAPI } from '../../services/api'
 
@@ -440,6 +441,7 @@ function AdminDashboard() {
         </>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

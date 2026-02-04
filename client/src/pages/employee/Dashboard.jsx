@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { useAuth } from '../../context/AuthContext'
 import { reportAPI, announcementAPI } from '../../services/api'
 
@@ -420,6 +421,7 @@ function EmployeeDashboard() {
         </>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

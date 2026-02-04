@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { announcementAPI, userAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 
@@ -465,6 +466,7 @@ function AdminAnnouncements() {
         </div>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { userAPI } from '../../services/api'
 
 function AdminEmployees() {
@@ -241,6 +242,7 @@ function AdminEmployees() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

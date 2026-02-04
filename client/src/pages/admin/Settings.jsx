@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { useAuth } from '../../context/AuthContext'
 import { userAPI } from '../../services/api'
 
@@ -330,6 +331,7 @@ function AdminSettings() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

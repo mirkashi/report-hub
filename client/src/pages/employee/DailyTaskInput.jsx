@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import Footer from '../../components/shared/Footer'
 import { reportAPI } from '../../services/api'
 
 function DailyTaskInput() {
@@ -437,6 +438,7 @@ function DailyTaskInput() {
         </>
         )}
       </main>
+      <Footer />
     </div>
   )
 }
